@@ -65,8 +65,20 @@ main{max-width:720px; margin:0 auto; padding:16px;}
 section.vista{display:none;}
 section.vista.activa{display:block;}
 
-.categoria{margin-bottom:28px;}
-.categoria h2{font-size:20px; color:var(--red); margin-bottom:10px; border-bottom:2px solid var(--line); padding-bottom:6px;}
+.cat-tabs{
+  position:sticky; top:0; z-index:30; background:var(--bg);
+  display:flex; gap:6px; overflow-x:auto; padding:4px 0 14px; margin:0 0 4px;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+.cat-tabs::-webkit-scrollbar{display:none;}
+.cat-tabs button{
+  flex:none; background:var(--bg3); color:var(--muted); border:1px solid var(--line);
+  padding:9px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; white-space:nowrap;
+}
+.cat-tabs button.activa{background:var(--red); color:#fff; border-color:var(--red);}
+
+.categoria-panel{display:none;}
+.categoria-panel.activa{display:block;}
 .subgrupo-titulo{font-size:12.5px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:14px 0 6px;}
 
 .item{
@@ -152,10 +164,6 @@ input[type=text], input[type=tel], textarea{
 .buscar-pedido{display:flex; gap:8px; margin-bottom:20px;}
 .buscar-pedido input{flex:1;}
 .buscar-pedido button{background:var(--bg3); border:1px solid var(--line); color:var(--cream); border-radius:8px; padding:0 14px; cursor:pointer;}
-.whatsapp-btn{
-  display:block; text-align:center; background:var(--green); color:#fff; text-decoration:none;
-  padding:13px; border-radius:10px; font-weight:700; margin-top:14px;
-}
 .vacio{color:var(--muted); text-align:center; padding:30px 0;}
 </style>
 </head>
@@ -180,7 +188,10 @@ input[type=text], input[type=tel], textarea{
 </nav>
 
 <main>
-  <section id="vista-carta" class="vista activa"></section>
+  <section id="vista-carta" class="vista activa">
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div id="cat-panels"></div>
+  </section>
 
   <section id="vista-seguimiento" class="vista">
     <div class="buscar-pedido">
@@ -202,7 +213,6 @@ input[type=text], input[type=tel], textarea{
         </div>
       </div>
       <div id="mapa"></div>
-      <a id="whatsapp-link" class="whatsapp-btn" href="#" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
     </div>
   </section>
 </main>
@@ -271,7 +281,6 @@ input[type=text], input[type=tel], textarea{
 <script>
 const SERVER = 'https://runfola-delivery-backend-production.up.railway.app';
 const WS_URL = SERVER.replace('https','wss').replace('http','ws');
-const WHATSAPP = '34684381484';
 const PEDIDO_MINIMO = 25;
 const RESTAURANTE = [40.7274, -3.7823];
 
@@ -322,24 +331,31 @@ let mapa = null, marcadorMoto = null, marcadorRestaurante = null;
 function fmt(n){ return n.toFixed(2).replace('.', ',') + ' €'; }
 
 function renderMenu(){
-  const cont = document.getElementById('vista-carta');
-  cont.innerHTML = MENU.map(cat => {
-    if (cat.sub) {
-      return `<div class="categoria"><h2>${cat.cat}</h2>` +
-        cat.sub.map(s => `<div class="subgrupo-titulo">${s.nombre}</div>` +
-          s.items.map(it => itemHtml(it)).join('')
-        ).join('') + `</div>`;
-    }
-    return `<div class="categoria"><h2>${cat.cat}</h2>` +
-      cat.items.map(it => itemHtml(it)).join('') + `</div>`;
+  const tabs = document.getElementById('cat-tabs');
+  const panels = document.getElementById('cat-panels');
+
+  tabs.innerHTML = MENU.map((cat, i) =>
+    `<button class="${i === 0 ? 'activa' : ''}" onclick="mostrarCategoria(${i})">${cat.cat}</button>`
+  ).join('');
+
+  panels.innerHTML = MENU.map((cat, i) => {
+    const contenido = cat.sub
+      ? cat.sub.map(s => `<div class="subgrupo-titulo">${s.nombre}</div>` + s.items.map(it => itemHtml(it)).join('')).join('')
+      : cat.items.map(it => itemHtml(it)).join('');
+    return `<div class="categoria-panel ${i === 0 ? 'activa' : ''}" id="cat-panel-${i}">${contenido}</div>`;
   }).join('');
 }
 
-function itemHtml([nombre, precio]){
-  const id = nombre.replace(/[^a-zA-Z0-9]/g,'_');
+function mostrarCategoria(i){
+  document.querySelectorAll('#cat-tabs button').forEach((btn, idx) => btn.classList.toggle('activa', idx === i));
+  document.querySelectorAll('.categoria-panel').forEach((panel, idx) => panel.classList.toggle('activa', idx === i));
+}
+
+function itemHtml([nombre, precio, desc]){
   return `<div class="item">
     <div class="item-info">
       <div class="plato-nombre">${nombre}</div>
+      ${desc ? `<div class="plato-desc">${desc}</div>` : ''}
       <div class="item-precio">${fmt(precio)}</div>
     </div>
     <button class="btn-add" onclick="añadirCarrito('${encodeURIComponent(nombre)}', ${precio})">+</button>
@@ -545,17 +561,7 @@ function pedidoConfirmado(orderId, estado){
   document.getElementById('exito-orderid').textContent = orderId;
   document.getElementById('overlay-exito').classList.add('visible');
   registrarPush(orderId);
-  prepararWhatsapp(orderId);
   conectarSeguimiento(orderId, estado);
-}
-
-function prepararWhatsapp(orderId){
-  let texto = `Hola Runfola, mi pedido ${orderId}`;
-  if (pedidoActual) {
-    const resumen = pedidoActual.items.map(it => `${it.cantidad}x ${it.nombre}`).join(', ');
-    texto = `Hola Runfola! Mi pedido ${orderId}: ${resumen}. Total ${fmt(pedidoActual.total)}. Pago: ${pedidoActual.pago === 'efectivo' ? 'efectivo al entregar' : 'tarjeta online'}.`;
-  }
-  document.getElementById('whatsapp-link').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
 }
 
 function irASeguimiento(){
