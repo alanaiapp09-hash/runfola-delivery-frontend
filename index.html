@@ -97,11 +97,16 @@ section.vista.activa{display:block;}
 .cart-bar{
   position:fixed; left:0; right:0; bottom:0; z-index:40;
   background:var(--red); color:#fff; border:none;
-  display:none; align-items:center; justify-content:space-between;
-  padding:14px 20px; font-weight:700; font-size:15px; cursor:pointer;
+  display:none; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 20px; font-weight:700; font-size:15px; cursor:pointer;
   max-width:720px; margin:0 auto; border-radius:14px 14px 0 0;
+  box-shadow:0 -4px 16px rgba(0,0,0,.35);
+  min-height:56px;
 }
 .cart-bar.visible{display:flex;}
+.cart-bar-info{display:flex; align-items:center; gap:6px; flex-wrap:wrap; text-align:left;}
+.cart-bar-sep{opacity:.75;}
+.cart-bar-cta{font-weight:800; white-space:nowrap; flex:none;}
 
 .overlay{
   position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:80;
@@ -218,8 +223,8 @@ input[type=text], input[type=tel], textarea{
 </main>
 
 <button class="cart-bar" id="cart-bar" onclick="abrirCarrito()">
-  <span id="cart-bar-cantidad">0 artículos</span>
-  <span id="cart-bar-total">0,00 €</span>
+  <span class="cart-bar-info">🛒 <span id="cart-bar-cantidad">0 artículos</span><span class="cart-bar-sep">·</span><span id="cart-bar-total">0,00 €</span></span>
+  <span class="cart-bar-cta">Ver pedido →</span>
 </button>
 
 <div class="overlay" id="overlay-carrito">
