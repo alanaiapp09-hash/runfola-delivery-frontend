@@ -292,35 +292,34 @@ const RESTAURANTE = [40.7274, -3.7823];
 
 const MENU = [
   { cat:'Pizzas', items:[
-    ['Margarita',10.90],['Genovesa',13.90],['Prosciutto',13.90],['Tentazione',13.90],
-    ['Diavola Dolce',13.90],['Diavola Inferno',13.90],['Tonno',13.90],['Hawaiana',13.90],
-    ['Cabramelizada',14.90],['Bella Italia',14.90],['Tartufatta',14.90],['Isleña',14.90],
-    ['Funghi e Prosciutto',14.90],['Caprichosa',14.90],['Frankfurt',14.90],['A tu gusto',12.90]
+    ['Margarita',10.90],['Tentazione',14.90],['Cabramelizada',14.90],['Diavola Dolce',13.90],
+    ['Diavola Inferno',13.90],['Bella Italia',14.90],['Tartufatta',14.90],['Isleña',14.90],
+    ['Genovesa',13.90],['Proscuitto',13.90],['Funghi e Proscuitto',14.90],['Capricciosa',14.90],
+    ['Tonno',14.90,'','tonno-pizza'],['Frankfurt',14.90],['Hawaiana',13.90],['A tu gusto',14.90]
   ]},
   { cat:'Especiales', items:[
-    ['Gourmet',15.90],['BBQ Pollo Asado',14.90],['Carbonara',14.90],['5 Quesos',14.90],['Vegetal',14.90]
+    ['Gourmet',15.90],['BBQ Pollo Asado',15.90],['BBQ Pulled Pork',15.90],['Carbonara',15.90],
+    ['5 Quesos',15.90],['Vegetal',15.90],['Doble Pepperoni',14.90]
   ]},
   { cat:'Entrantes', items:[
-    ['Provoleta',11.90],['Albóndigas',13.90],['Finger de Pollo',9.90],['Patatas Frankfurt',8.90],
-    ['Pan de Ajo',8.90],['Tequeños',9.90],['Patatas Bravioli',8.90],['Patatas Trufadas con Bacon',9.00]
+    ['Provoleta',11.90],['Pan de Ajo',9.90],['Tequeños',9.90],['Fingers de Pollo',9.90],
+    ['Aros de Cebolla',8.90],['Patatas y Frankfurt',8.90],['Patatas Bravioli',8.90],
+    ['Patatas Trufadas con Bacon',9.90],['Flor de Alcachofa Confitada con Guanciale',5.50,'Precio por unidad']
   ]},
   { cat:'Ensaladas', items:[
-    ['Burrata',12.90],['César',13.90],['Tonno',9.90]
+    ['Burrata',12.90],['César',13.90],['Tonno',9.90,'','tonno-ensalada']
   ]},
   { cat:'Postres', items:[
-    ['Tarta de Queso',6.90],['Helado de Caramelo Salado',5.50],['Pizzeta de Nutella o Pistacho',8.50]
+    ['Tarta de Queso',6.90],['Helado de Caramelo Salado',5.50],['Pizzeta Dolce',8.90]
   ]},
   { cat:'Bebidas', sub:[
     { nombre:'Cervezas', items:[
-      ['Doble',3.20],['Tercio',3.20],["Tercio 0'0",3.20],['Tercio Sin Gluten',3.20],
-      ['Ribera Reposada',3.20],['1906',3.20],['Estrella Galicia',3.20],['Jarra',5.00]
+      ['Mahou verde lata',2.00],['Mahou verde tercio',3.50],["Tercio 0'0",3.20],['Tercio Sin Gluten',3.20]
     ]},
     { nombre:'Refrescos', items:[
-      ['Coca-Cola',2.50],['Coca-Cola Zero',2.50],['Fanta Limón',2.50],['Fanta Naranja',2.50],
-      ['Nestea',2.50],['Aquarius Limón',2.50],['Aquarius Naranja',2.50],['Agua con Gas',2.50],['Agua',2.00]
-    ]},
-    { nombre:'Vinos & Café', items:[
-      ['Copa de Vino',4.00],['Botella Vino ALMA',15.00],['Café',2.00]
+      ['Coca-Cola',2.80],['Coca-Cola Zero',2.80],['Fanta Limón',2.80],['Fanta Naranja',2.80],
+      ['Nestea',2.80],['Aquarius Limón',2.80],['Aquarius Naranja',2.80],
+      ['Agua con Gas',3.00],['Agua Solán de Cabras 50 cl',2.00],['Agua 1,5 L',4.00]
     ]}
   ]}
 ];
@@ -357,30 +356,32 @@ function mostrarCategoria(i){
   document.querySelectorAll('.categoria-panel').forEach((panel, idx) => panel.classList.toggle('activa', idx === i));
 }
 
-function itemHtml([nombre, precio, desc]){
+function itemHtml([nombre, precio, desc, id]){
+  const itemId = id || nombre;
   return `<div class="item">
     <div class="item-info">
       <div class="plato-nombre">${nombre}</div>
       ${desc ? `<div class="plato-desc">${desc}</div>` : ''}
       <div class="item-precio">${fmt(precio)}</div>
     </div>
-    <button class="btn-add" onclick="añadirCarrito('${encodeURIComponent(nombre)}', ${precio})">+</button>
+    <button class="btn-add" onclick="añadirCarrito('${encodeURIComponent(itemId)}', '${encodeURIComponent(nombre)}', ${precio})">+</button>
   </div>`;
 }
 
-function añadirCarrito(nombreCod, precio){
+function añadirCarrito(idCod, nombreCod, precio){
+  const id = decodeURIComponent(idCod);
   const nombre = decodeURIComponent(nombreCod);
-  const existente = carrito.find(it => it.nombre === nombre);
+  const existente = carrito.find(it => it.id === id);
   if (existente) existente.cantidad++;
-  else carrito.push({ nombre, precio, cantidad:1 });
+  else carrito.push({ id, nombre, precio, cantidad:1 });
   renderCarrito();
 }
 
-function cambiarCantidad(nombre, delta){
-  const it = carrito.find(i => i.nombre === nombre);
+function cambiarCantidad(id, delta){
+  const it = carrito.find(i => i.id === id);
   if (!it) return;
   it.cantidad += delta;
-  if (it.cantidad <= 0) carrito = carrito.filter(i => i.nombre !== nombre);
+  if (it.cantidad <= 0) carrito = carrito.filter(i => i.id !== id);
   renderCarrito();
 }
 
@@ -409,9 +410,9 @@ function renderCarrito(){
         <div class="item-precio">${fmt(it.precio)} / ud.</div>
       </div>
       <div class="qty-ctrl">
-        <button onclick="cambiarCantidad('${it.nombre.replace(/'/g,"\\'")}', -1)">−</button>
+        <button onclick="cambiarCantidad('${it.id.replace(/'/g,"\\'")}', -1)">−</button>
         <span>${it.cantidad}</span>
-        <button onclick="cambiarCantidad('${it.nombre.replace(/'/g,"\\'")}', 1)">+</button>
+        <button onclick="cambiarCantidad('${it.id.replace(/'/g,"\\'")}', 1)">+</button>
       </div>
     </div>
   `).join('') : '<p class="vacio">Tu carrito está vacío.</p>';
