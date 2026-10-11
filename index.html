@@ -306,6 +306,10 @@ input[type=text], input[type=tel], textarea{
         <b id="pago-efectivo-label">💶 Efectivo al recibir</b>
       </div>
     </div>
+    <div id="chk-pagacon-wrap" style="display:none;">
+      <label>¿Con cuánto pagas?</label>
+      <input type="number" id="chk-pagacon" min="0" step="0.01" placeholder="¿Con cuánto pagas? (para el cambio, opcional)">
+    </div>
     <div id="checkout-error" class="error-pago" style="display:none;"></div>
     <button class="btn-principal" id="btn-realizar" style="margin-top:18px;" onclick="realizarPedido()">Realizar pedido</button>
   </div>
@@ -529,6 +533,13 @@ function actualizarCheckoutModo(){
   document.getElementById('pago-efectivo-label').textContent = modoPedido === 'domicilio'
     ? '💶 Efectivo al recibir'
     : '💶 Pagar en el local (efectivo o tarjeta)';
+  actualizarVisibilidadPagaCon();
+}
+
+function actualizarVisibilidadPagaCon(){
+  const mostrar = (pagoSeleccionado === 'efectivo' && modoPedido === 'domicilio');
+  document.getElementById('chk-pagacon-wrap').style.display = mostrar ? 'block' : 'none';
+  if (!mostrar) document.getElementById('chk-pagacon').value = '';
 }
 
 function abrirCarrito(){
@@ -553,6 +564,7 @@ function seleccionarPago(tipo){
   pagoSeleccionado = tipo;
   document.getElementById('pago-tarjeta').classList.toggle('sel', tipo==='tarjeta');
   document.getElementById('pago-efectivo').classList.toggle('sel', tipo==='efectivo');
+  actualizarVisibilidadPagaCon();
 }
 
 function mostrarErrorCheckout(msg){
@@ -591,11 +603,13 @@ async function realizarPedido(){
     items.push({ nombre: 'Ración de tequeños (regalo)', precio: 0, cantidad: 1 });
   }
   const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
+  const v = parseFloat(document.getElementById('chk-pagacon')?.value);
+  const pagaCon = (isNaN(v) || v <= 0) ? null : v;
 
   try {
     const res = await fetch(SERVER + '/pedido', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total })
+      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon })
     });
     const data = await res.json();
     if (!data.ok) {
@@ -684,6 +698,7 @@ function limpiarFormularioCheckout(){
   document.getElementById('chk-correo').value = '';
   document.getElementById('chk-direccion').value = '';
   document.getElementById('chk-notas').value = '';
+  document.getElementById('chk-pagacon').value = '';
   document.getElementById('checkout-error').style.display = 'none';
   seleccionarPago('tarjeta');
 }
