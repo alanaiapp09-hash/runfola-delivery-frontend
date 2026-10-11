@@ -155,6 +155,13 @@ input[type=text], input[type=tel], textarea{
 .pago-op b{display:block; font-size:14px;}
 .pago-op span{font-size:11.5px; color:var(--muted);}
 
+.modo-toggle{display:flex; gap:10px; margin-bottom:14px;}
+.modo-op{
+  flex:1; border:1px solid var(--line); background:var(--bg3); color:var(--cream); border-radius:10px;
+  padding:12px 8px; text-align:center; cursor:pointer; font-weight:700; font-size:13.5px; font-family:'DM Sans',sans-serif;
+}
+.modo-op.sel{border-color:var(--red); background:rgba(225,38,25,.12); color:var(--red);}
+
 #sumup-card{min-height:280px; margin:14px 0;}
 .error-pago{color:#ff9a90; font-size:13.5px; margin-top:10px;}
 
@@ -170,9 +177,38 @@ input[type=text], input[type=tel], textarea{
 .buscar-pedido input{flex:1;}
 .buscar-pedido button{background:var(--bg3); border:1px solid var(--line); color:var(--cream); border-radius:8px; padding:0 14px; cursor:pointer;}
 .vacio{color:var(--muted); text-align:center; padding:30px 0;}
+
+/* Popup promo · tequeños gratis */
+.promo-overlay{display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,.72); align-items:center; justify-content:center; padding:16px;}
+.promo-overlay.open{display:flex;}
+.promo-modal{position:relative; background:var(--bg2); width:100%; max-width:380px; border-radius:16px; border:1px solid var(--line); overflow:hidden; text-align:center;}
+.promo-x{position:absolute; top:10px; right:10px; z-index:2; background:rgba(0,0,0,.4); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:18px; display:grid; place-items:center;}
+.promo-img{width:100%; background:var(--bg3);}
+.promo-img img{width:100%; max-height:42vh; object-fit:contain; display:block; border-radius:12px;}
+.promo-body{padding:20px 18px 22px;}
+.promo-body h3{font-size:21px; margin-bottom:8px;}
+.promo-body p{color:var(--muted); font-size:13.5px; margin-bottom:16px; line-height:1.5;}
+.promo-cta{display:inline-flex; align-items:center; gap:8px; background:var(--red); color:#fff; font-weight:700; font-size:15px; border:none; padding:12px 26px; border-radius:100px; cursor:pointer; font-family:'DM Sans',sans-serif;}
+.promo-cta:active{background:var(--red-deep);}
+.promo-fine{display:block; font-size:11px; color:var(--muted); margin-top:12px;}
 </style>
 </head>
 <body>
+
+<div class="promo-overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-label="Promoción tequeños gratis">
+  <div class="promo-modal" onclick="event.stopPropagation()">
+    <button class="promo-x" onclick="closePromo()" aria-label="Cerrar">&times;</button>
+    <div class="promo-img">
+      <img src="image/promo-web-opt.jpg" alt="Ración de tequeños gratis con tu pedido a domicilio" loading="eager">
+    </div>
+    <div class="promo-body">
+      <h3>🧀 ¡TEQUEÑOS GRATIS!</h3>
+      <p>Pide a domicilio y te llevas una ración de tequeños de regalo con tu pedido.</p>
+      <button type="button" class="promo-cta" id="promoCta" onclick="closePromo()">¡Pedir ahora!</button>
+      <small class="promo-fine">Válido solo en pedidos a domicilio. Una ración por pedido.</small>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -231,6 +267,11 @@ input[type=text], input[type=tel], textarea{
   <div class="modal">
     <button class="modal-close" onclick="cerrarOverlay('overlay-carrito')">✕</button>
     <h2>Tu carrito</h2>
+    <div class="modo-toggle" id="modo-toggle">
+      <button type="button" class="modo-op sel" id="modo-domicilio" onclick="seleccionarModo('domicilio')">🛵 A domicilio</button>
+      <button type="button" class="modo-op" id="modo-recogida" onclick="seleccionarModo('recogida')">🏠 Recoger en el local</button>
+    </div>
+    <div id="aviso-horario-carrito" class="aviso-minimo" style="display:none;"></div>
     <div id="cart-lista"></div>
     <div class="cart-total"><span>Total</span><span id="cart-total-num">0,00 €</span></div>
     <div id="aviso-minimo" class="aviso-minimo" style="display:none;">Pedido mínimo 25 €</div>
@@ -243,25 +284,30 @@ input[type=text], input[type=tel], textarea{
   <div class="modal">
     <button class="modal-close" onclick="cerrarOverlay('overlay-checkout')">✕</button>
     <h2>Tus datos</h2>
+    <div id="aviso-horario-checkout" class="aviso-minimo" style="display:none;"></div>
     <label>Nombre</label>
     <input type="text" id="chk-nombre">
     <label>Teléfono</label>
     <input type="tel" id="chk-telefono">
-    <label>Dirección de entrega</label>
-    <input type="text" id="chk-direccion">
+    <label>Correo electrónico</label>
+    <input type="email" id="chk-correo" placeholder="Correo electrónico">
+    <div id="chk-direccion-wrap">
+      <label>Dirección de entrega</label>
+      <input type="text" id="chk-direccion">
+    </div>
     <label>Notas (opcional)</label>
     <textarea id="chk-notas" rows="2"></textarea>
     <label>Forma de pago</label>
     <div class="pago-opciones">
       <div class="pago-op sel" id="pago-tarjeta" onclick="seleccionarPago('tarjeta')">
-        <b>💳 Tarjeta</b><span>Pago online seguro</span>
+        <b>💳 Pagar con tarjeta online (ahora)</b>
       </div>
       <div class="pago-op" id="pago-efectivo" onclick="seleccionarPago('efectivo')">
-        <b>💶 Efectivo</b><span>Al entregar</span>
+        <b id="pago-efectivo-label">💶 Efectivo al recibir</b>
       </div>
     </div>
     <div id="checkout-error" class="error-pago" style="display:none;"></div>
-    <button class="btn-principal" style="margin-top:18px;" onclick="realizarPedido()">Realizar pedido</button>
+    <button class="btn-principal" id="btn-realizar" style="margin-top:18px;" onclick="realizarPedido()">Realizar pedido</button>
   </div>
 </div>
 
@@ -289,6 +335,18 @@ const SERVER = 'https://runfola-delivery-backend-production.up.railway.app';
 const WS_URL = SERVER.replace('https','wss').replace('http','ws');
 const PEDIDO_MINIMO = 25;
 const RESTAURANTE = [40.7274, -3.7823];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Lun-Vie 19:30-23:20; Sáb y Dom 12:30-16:00 y 19:30-23:20';
+
+function _horaMadrid(){
+  const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  const m={}; for(const x of p) m[x.type]=x.value;
+  const d={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:0};
+  let hh=parseInt(m.hour,10); if(hh===24) hh=0;
+  return {dow:d[m.weekday], min:hh*60+parseInt(m.minute,10)};
+}
+function _ventanas(dow){ return (dow===0||dow===6) ? [[750,960],[1170,1400]] : [[1170,1400]]; }
+function estaAbierto(){ const {dow,min}=_horaMadrid(); return _ventanas(dow).some(([a,b])=>min>=a&&min<=b); }
 
 const MENU = [
   { cat:'Pizzas', items:[
@@ -328,6 +386,7 @@ const ESTADOS = ['recibido','preparando','horno','camino','entregado'];
 const PORCENTAJES = { pendiente_pago:0, recibido:10, preparando:35, horno:60, camino:85, entregado:100 };
 
 let carrito = [];
+let modoPedido = 'domicilio';   // 'domicilio' | 'recogida'
 let pagoSeleccionado = 'tarjeta';
 let pedidoActual = null;
 let ws = null;
@@ -403,7 +462,7 @@ function renderCarrito(){
   }
 
   const lista = document.getElementById('cart-lista');
-  lista.innerHTML = carrito.length ? carrito.map(it => `
+  let html = carrito.length ? carrito.map(it => `
     <div class="cart-item">
       <div>
         <div class="nombre">${it.nombre}</div>
@@ -417,10 +476,19 @@ function renderCarrito(){
     </div>
   `).join('') : '<p class="vacio">Tu carrito está vacío.</p>';
 
+  if (carrito.length && modoPedido === 'domicilio') {
+    html += `
+    <div class="cart-item">
+      <div><div class="nombre">🧀 Ración de tequeños (regalo)</div></div>
+      <div class="item-precio">0,00 €</div>
+    </div>`;
+  }
+  lista.innerHTML = html;
+
   document.getElementById('cart-total-num').textContent = fmt(total);
   const aviso = document.getElementById('aviso-minimo');
   const btnContinuar = document.getElementById('btn-continuar');
-  if (total < PEDIDO_MINIMO) {
+  if (modoPedido === 'domicilio' && total < PEDIDO_MINIMO) {
     aviso.style.display = 'block';
     aviso.textContent = `Pedido mínimo ${PEDIDO_MINIMO} € (te faltan ${fmt(PEDIDO_MINIMO - total)})`;
     btnContinuar.disabled = true;
@@ -428,9 +496,45 @@ function renderCarrito(){
     aviso.style.display = 'none';
     btnContinuar.disabled = carrito.length === 0;
   }
+  if (!comprobarHorarioCarrito()) btnContinuar.disabled = true;
 }
 
-function abrirCarrito(){ document.getElementById('overlay-carrito').classList.add('visible'); }
+function comprobarHorarioCarrito(){
+  const abierto = estaAbierto();
+  const aviso = document.getElementById('aviso-horario-carrito');
+  aviso.style.display = abierto ? 'none' : 'block';
+  aviso.textContent = HORARIO_MENSAJE;
+  return abierto;
+}
+
+function comprobarHorarioCheckout(){
+  const abierto = estaAbierto();
+  const aviso = document.getElementById('aviso-horario-checkout');
+  aviso.style.display = abierto ? 'none' : 'block';
+  aviso.textContent = HORARIO_MENSAJE;
+  document.getElementById('btn-realizar').disabled = !abierto;
+  return abierto;
+}
+
+function seleccionarModo(modo){
+  modoPedido = (modo === 'recogida') ? 'recogida' : 'domicilio';
+  document.getElementById('modo-domicilio').classList.toggle('sel', modoPedido === 'domicilio');
+  document.getElementById('modo-recogida').classList.toggle('sel', modoPedido === 'recogida');
+  renderCarrito();
+  actualizarCheckoutModo();
+}
+
+function actualizarCheckoutModo(){
+  document.getElementById('chk-direccion-wrap').style.display = modoPedido === 'domicilio' ? 'block' : 'none';
+  document.getElementById('pago-efectivo-label').textContent = modoPedido === 'domicilio'
+    ? '💶 Efectivo al recibir'
+    : '💶 Pagar en el local (efectivo o tarjeta)';
+}
+
+function abrirCarrito(){
+  renderCarrito();
+  document.getElementById('overlay-carrito').classList.add('visible');
+}
 function cerrarOverlay(id){ document.getElementById(id).classList.remove('visible'); }
 
 function seguirComprando(){
@@ -440,6 +544,8 @@ function seguirComprando(){
 
 function abrirCheckout(){
   cerrarOverlay('overlay-carrito');
+  actualizarCheckoutModo();
+  comprobarHorarioCheckout();
   document.getElementById('overlay-checkout').classList.add('visible');
 }
 
@@ -456,32 +562,47 @@ function mostrarErrorCheckout(msg){
 }
 
 async function realizarPedido(){
+  if (!estaAbierto()) {
+    return mostrarErrorCheckout(HORARIO_MENSAJE);
+  }
+
   const nombre = document.getElementById('chk-nombre').value.trim();
   const telefono = document.getElementById('chk-telefono').value.trim();
+  const correo = document.getElementById('chk-correo').value.trim();
   const direccion = document.getElementById('chk-direccion').value.trim();
   const notas = document.getElementById('chk-notas').value.trim();
   const total = totalCarrito();
 
-  if (!nombre || !telefono || !direccion) {
-    return mostrarErrorCheckout('Completa nombre, teléfono y dirección.');
+  if (!nombre || !telefono || !correo) {
+    return mostrarErrorCheckout('Completa nombre, teléfono y correo.');
   }
-  if (total < PEDIDO_MINIMO) {
+  if (!EMAIL_RE.test(correo)) {
+    return mostrarErrorCheckout('Introduce un correo válido.');
+  }
+  if (modoPedido === 'domicilio' && !direccion) {
+    return mostrarErrorCheckout('Completa la dirección de entrega.');
+  }
+  if (modoPedido === 'domicilio' && total < PEDIDO_MINIMO) {
     return mostrarErrorCheckout(`Pedido mínimo ${PEDIDO_MINIMO} €.`);
   }
 
   const items = carrito.map(it => ({ nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
+  if (modoPedido === 'domicilio') {
+    items.push({ nombre: 'Ración de tequeños (regalo)', precio: 0, cantidad: 1 });
+  }
+  const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
 
   try {
     const res = await fetch(SERVER + '/pedido', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, direccion, notas, pago: pagoSeleccionado, items, total })
+      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total })
     });
     const data = await res.json();
     if (!data.ok) {
       return mostrarErrorCheckout(data.error || 'No se pudo crear el pedido.');
     }
 
-    pedidoActual = { orderId: data.orderId, nombre, telefono, direccion, items, total, pago: pagoSeleccionado };
+    pedidoActual = { orderId: data.orderId, nombre, telefono, correo, direccion: direccionEnvio, modo: modoPedido, items, total, pago: pagoSeleccionado };
 
     if (pagoSeleccionado === 'efectivo') {
       cerrarOverlay('overlay-checkout');
@@ -560,6 +681,7 @@ function cancelarPago(){
 function limpiarFormularioCheckout(){
   document.getElementById('chk-nombre').value = '';
   document.getElementById('chk-telefono').value = '';
+  document.getElementById('chk-correo').value = '';
   document.getElementById('chk-direccion').value = '';
   document.getElementById('chk-notas').value = '';
   document.getElementById('checkout-error').style.display = 'none';
@@ -677,6 +799,21 @@ async function registrarPush(orderId){
     console.warn('Push no disponible:', e);
   }
 }
+
+/* ---- Popup promo tequeños (máx. 1 vez al día) ---- */
+const promoOverlay = document.getElementById('promoOverlay');
+function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+promoOverlay.addEventListener('click', e => { if (e.target === promoOverlay) closePromo(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && promoOverlay.classList.contains('open')) closePromo(); });
+(function(){
+  const today = new Date().toISOString().slice(0,10);
+  const last = localStorage.getItem('runfolaPromoTequenosVistoFecha');
+  if (last !== today) {
+    openPromo();
+    localStorage.setItem('runfolaPromoTequenosVistoFecha', today);
+  }
+})();
 
 renderMenu();
 renderCarrito();
