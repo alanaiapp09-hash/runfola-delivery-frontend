@@ -285,6 +285,16 @@ input[type=text], input[type=tel], textarea{
     <button class="modal-close" onclick="cerrarOverlay('overlay-checkout')">✕</button>
     <h2>Tus datos</h2>
     <div id="aviso-horario-checkout" class="aviso-minimo" style="display:none;"></div>
+    <label>¿Cuándo?</label>
+    <div id="entrega-opciones" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;">
+      <label id="entrega-op-asap" style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
+        <input type="radio" name="entrega" id="entrega-asap" value="asap" checked onchange="seleccionarEntrega(this.value)"> ⏱️ Lo antes posible
+      </label>
+      <label id="entrega-op-programada" style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
+        <input type="radio" name="entrega" id="entrega-programada" value="programada" onchange="seleccionarEntrega(this.value)"> 📅 Programar
+      </label>
+    </div>
+    <select id="chk-franja" style="display:none;"></select>
     <label>Nombre</label>
     <input type="text" id="chk-nombre">
     <label>Teléfono</label>
@@ -352,6 +362,20 @@ function _horaMadrid(){
 function _ventanas(dow){ return (dow===0||dow===6) ? [[750,960],[1170,1400]] : [[1170,1400]]; }
 function estaAbierto(){ const {dow,min}=_horaMadrid(); return _ventanas(dow).some(([a,b])=>min>=a&&min<=b); }
 
+function generarFranjas(){
+  const { dow, min } = _horaMadrid();
+  const LEAD = 30;                 // min de antelación mínima
+  const desde = min + LEAD;
+  const franjas = [];
+  for (const [ini, fin] of _ventanas(dow)){
+    let start = Math.max(ini, Math.ceil(desde/15)*15);
+    for (let t = start; t <= fin; t += 15) franjas.push(t);
+  }
+  return franjas;                  // minutos desde medianoche
+}
+function minutosAHHMM(t){ const h=Math.floor(t/60), m=t%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+
 const MENU = [
   { cat:'Pizzas', items:[
     ['Margarita',10.90],['Tentazione',14.90],['Cabramelizada',14.90],['Diavola Dolce',13.90],
@@ -392,6 +416,7 @@ const PORCENTAJES = { pendiente_pago:0, recibido:10, preparando:35, horno:60, ca
 let carrito = [];
 let modoPedido = 'domicilio';   // 'domicilio' | 'recogida'
 let pagoSeleccionado = 'tarjeta';
+let entregaTipo = 'asap';   // 'asap' | 'programada'
 let pedidoActual = null;
 let ws = null;
 let mapa = null, marcadorMoto = null, marcadorRestaurante = null;
@@ -503,20 +528,64 @@ function renderCarrito(){
   if (!comprobarHorarioCarrito()) btnContinuar.disabled = true;
 }
 
+const AVISO_PROGRAMAR = 'Cerrado ahora — programa tu pedido para más tarde hoy.';
+
+function seleccionarEntrega(tipo){
+  entregaTipo = (tipo === 'programada') ? 'programada' : 'asap';
+  document.getElementById('chk-franja').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+}
+
+function poblarFranjaSelect(franjas){
+  const sel = document.getElementById('chk-franja');
+  sel.innerHTML = franjas.map((t) => {
+    const hhmm = minutosAHHMM(t);
+    return `<option value="${hhmm}">${hhmm}</option>`;
+  }).join('');
+}
+
 function comprobarHorarioCarrito(){
   const abierto = estaAbierto();
+  const franjas = generarFranjas();
   const aviso = document.getElementById('aviso-horario-carrito');
-  aviso.style.display = abierto ? 'none' : 'block';
-  aviso.textContent = HORARIO_MENSAJE;
-  return abierto;
+  if (abierto) {
+    aviso.style.display = 'none';
+    return true;
+  }
+  aviso.style.display = 'block';
+  aviso.textContent = franjas.length > 0 ? AVISO_PROGRAMAR : HORARIO_MENSAJE;
+  return franjas.length > 0;
 }
 
 function comprobarHorarioCheckout(){
   const abierto = estaAbierto();
+  const franjas = generarFranjas();
   const aviso = document.getElementById('aviso-horario-checkout');
-  aviso.style.display = abierto ? 'none' : 'block';
-  aviso.textContent = HORARIO_MENSAJE;
-  document.getElementById('btn-realizar').disabled = !abierto;
+  const opAsap = document.getElementById('entrega-op-asap');
+  const inputAsap = document.getElementById('entrega-asap');
+  const inputProgramada = document.getElementById('entrega-programada');
+
+  poblarFranjaSelect(franjas);
+
+  if (abierto) {
+    opAsap.style.display = '';
+    inputAsap.disabled = false;
+    if (entregaTipo !== 'programada') entregaTipo = 'asap';
+    aviso.style.display = 'none';
+  } else if (franjas.length > 0) {
+    opAsap.style.display = 'none';
+    inputAsap.disabled = true;
+    entregaTipo = 'programada';
+    aviso.style.display = 'block';
+    aviso.textContent = AVISO_PROGRAMAR;
+  } else {
+    aviso.style.display = 'block';
+    aviso.textContent = HORARIO_MENSAJE;
+  }
+  inputAsap.checked = entregaTipo === 'asap';
+  inputProgramada.checked = entregaTipo === 'programada';
+  document.getElementById('chk-franja').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+
+  document.getElementById('btn-realizar').disabled = !abierto && franjas.length === 0;
   return abierto;
 }
 
@@ -574,7 +643,13 @@ function mostrarErrorCheckout(msg){
 }
 
 async function realizarPedido(){
-  if (!estaAbierto()) {
+  let horaProgramada = null;
+  if (entregaTipo === 'programada') {
+    horaProgramada = document.getElementById('chk-franja').value;
+    if (!horaProgramada) {
+      return mostrarErrorCheckout('Elige una hora de entrega');
+    }
+  } else if (!estaAbierto()) {
     return mostrarErrorCheckout(HORARIO_MENSAJE);
   }
 
@@ -609,7 +684,7 @@ async function realizarPedido(){
   try {
     const res = await fetch(SERVER + '/pedido', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon })
+      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon, entrega: entregaTipo, horaProgramada })
     });
     const data = await res.json();
     if (!data.ok) {
@@ -701,6 +776,8 @@ function limpiarFormularioCheckout(){
   document.getElementById('chk-pagacon').value = '';
   document.getElementById('checkout-error').style.display = 'none';
   seleccionarPago('tarjeta');
+  seleccionarEntrega('asap');
+  document.getElementById('entrega-asap').checked = true;
 }
 
 function pedidoConfirmado(orderId, estado){
