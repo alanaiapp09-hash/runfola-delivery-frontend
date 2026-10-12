@@ -425,25 +425,52 @@ function minutosAHHMM(t){ const h=Math.floor(t/60), m=t%60;
 
 const MENU = [
   { cat:'Pizzas', items:[
-    ['Margarita',10.90],['Tentazione',14.90],['Cabramelizada',14.90],['Diavola Dolce',13.90],
-    ['Diavola Inferno',13.90],['Bella Italia',14.90],['Tartufatta',14.90],['Isleña',14.90],
-    ['Genovesa',13.90],['Proscuitto',13.90],['Funghi e Proscuitto',14.90],['Capricciosa',14.90],
-    ['Tonno',14.90,'','tonno-pizza'],['Frankfurt',14.90],['Hawaiana',13.90],['A tu gusto',14.90]
+    ['Margarita',10.90,'Base de tomate, mozzarella'],
+    ['Tentazione',14.90,'Base de tomate, chorizo, jamón York, maíz, mozzarella'],
+    ['Cabramelizada',14.90,'Base blanca, queso de cabra, cebolla caramelizada, pistacho, mozzarella'],
+    ['Diavola Dolce',13.90,'Base de tomate, salami napoli picante, miel, mozzarella'],
+    ['Diavola Inferno',13.90,'Base de tomate, salami napoli picante, mozzarella'],
+    ['Bella Italia',14.90,'Base de tomate, rúcula, jamón ibérico, parmesano, mozzarella'],
+    ['Tartufatta',14.90,'Base blanca, champiñones, salsa de trufa, mozzarella'],
+    ['Isleña',14.90,'Base de tomate, sobrasada mallorquina, queso taleggio, miel, mozzarella'],
+    ['Genovesa',13.90,'Base de pesto, cherrys, mozzarella'],
+    ['Proscuitto',13.90,'Base de tomate, jamón York, mozzarella'],
+    ['Funghi e Proscuitto',14.90,'Base de tomate, jamón York, champiñones, mozzarella'],
+    ['Capricciosa',14.90,'Base de tomate, alcachofas, champiñones, jamón de York, aceitunas negras, mozzarella'],
+    ['Tonno',14.90,'Base blanca, cebolla, atún, aceitunas negras, mozzarella','tonno-pizza'],
+    ['Frankfurt',14.90,'Base de tomate, salchichas Frankfurt, bacon, mozzarella'],
+    ['Hawaiana',13.90,'Base de tomate, piña, jamón York, mozzarella'],
+    ['A tu gusto',14.90,'Base bianca, pesto, bbq, carbonara o tomate, mozzarella + 1 ingrediente a elegir']
   ]},
   { cat:'Especiales', items:[
-    ['Gourmet',15.90],['BBQ Pollo Asado',15.90],['BBQ Pulled Pork',15.90],['Carbonara',15.90],
-    ['5 Quesos',15.90],['Vegetal',15.90],['Doble Pepperoni',14.90]
+    ['Gourmet',15.90,'Base blanca, pimientos caramelizados, gorgonzola, mozzarella'],
+    ['BBQ Pollo Asado',15.90,'Base de tomate, salsa BBQ, pollo asado, bacon, mozzarella'],
+    ['BBQ Pulled Pork',15.90,'Base de tomate, salsa BBQ, pulled pork, cebolla, bacon, mozzarella'],
+    ['Carbonara',15.90,'Base carbonara, guanciale, mozzarella'],
+    ['5 Quesos',15.90,'Base blanca, gorgonzola, cabra, taleggio, parmesano, mozzarella'],
+    ['Vegetal',15.90,'Base de tomate, alcachofas, champiñones, cebolla, aceitunas negras, mozzarella'],
+    ['Doble Pepperoni',14.90,'Base de tomate, doble pepperoni, mozzarella']
   ]},
   { cat:'Entrantes', items:[
-    ['Provoleta',11.90],['Pan de Ajo',9.90],['Tequeños',9.90],['Fingers de Pollo',9.90],
-    ['Aros de Cebolla',8.90],['Patatas y Frankfurt',8.90],['Patatas Bravioli',8.90],
-    ['Patatas Trufadas con Bacon',9.90],['Flor de Alcachofa Confitada con Guanciale',5.50,'Precio por unidad']
+    ['Provoleta',11.90,'Provolone fundido al horno'],
+    ['Pan de Ajo',9.90,'Pan de ajo al horno'],
+    ['Tequeños',9.90,'Dedos de masa rellenos de queso'],
+    ['Fingers de Pollo',9.90,'Tiras de pollo crujiente'],
+    ['Aros de Cebolla',8.90,'Aros de cebolla rebozados'],
+    ['Patatas y Frankfurt',8.90,'Patatas con salchicha Frankfurt'],
+    ['Patatas Bravioli',8.90,'Patatas estilo bravas de la casa'],
+    ['Patatas Trufadas con Bacon',9.90,'Patatas con aceite de trufa y bacon'],
+    ['Flor de Alcachofa Confitada con Guanciale',5.50,'Alcachofa confitada con guanciale · precio por unidad']
   ]},
   { cat:'Ensaladas', items:[
-    ['Burrata',12.90],['César',13.90],['Tonno',9.90,'','tonno-ensalada']
+    ['Burrata',12.90,'Rúcula, burrata, tomate, salsa de trufa o pesto'],
+    ['César',13.90,'Mézclum, pollo, picatostes, salsa César, queso parmesano'],
+    ['Tonno',9.90,'Mézclum, atún, cebolla, aceitunas negras','tonno-ensalada']
   ]},
   { cat:'Postres', items:[
-    ['Tarta de Queso',6.90],['Helado de Caramelo Salado',5.50],['Pizzeta Dolce',8.90]
+    ['Tarta de Queso',6.90,'Tarta de queso (pistacho, Nutella o frutos rojos)'],
+    ['Helado de Caramelo Salado',5.50,'Helado artesano de caramelo salado'],
+    ['Pizzeta Dolce',8.90,'Pizzeta dulce con Nutella o pistacho']
   ]},
   { cat:'Bebidas', sub:[
     { nombre:'Cervezas', items:[
