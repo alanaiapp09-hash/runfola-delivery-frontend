@@ -142,15 +142,19 @@ section.vista.activa{display:block;}
 }
 
 label{display:block; font-size:13px; color:var(--muted); margin:14px 0 5px;}
-input[type=text], input[type=tel], input[type=number], textarea, select{
+input[type=text], input[type=tel], input[type=number], input[type=email], textarea, select{
   width:100%; background:var(--bg3); border:1px solid var(--line); color:var(--cream);
   padding:11px 12px; border-radius:8px; font-size:15px; font-family:'DM Sans',sans-serif;
   color-scheme:dark;
 }
-input[type=text]:focus, input[type=tel]:focus, input[type=number]:focus, textarea:focus, select:focus{
+input[type=text]:focus, input[type=tel]:focus, input[type=number]:focus, input[type=email]:focus, textarea:focus, select:focus{
   border-color:var(--red); outline:none;
 }
 input.campo-invalido{border-color:var(--red);}
+.caja-info{
+  background:var(--bg3); border:1px solid var(--line); border-radius:8px; padding:11px 12px; font-size:15px;
+  color:var(--cream); min-height:19px; display:flex; align-items:center;
+}
 .pago-opciones{display:flex; gap:10px; margin-top:6px;}
 .pago-op{
   flex:1; border:1px solid var(--line); background:var(--bg3); border-radius:10px; padding:12px;
@@ -168,6 +172,9 @@ input.campo-invalido{border-color:var(--red);}
 }
 .entrega-op input{display:none;}
 .entrega-op.sel{border-color:var(--red); background:rgba(225,38,25,.12); font-weight:700;}
+
+.propina-opciones{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+.propina-opciones .entrega-op{min-width:0;}
 
 .modo-toggle{display:flex; gap:10px; margin-bottom:14px;}
 .modo-op{
@@ -333,9 +340,31 @@ input.campo-invalido{border-color:var(--red);}
         <b id="pago-efectivo-label">💶 Efectivo al recibir</b>
       </div>
     </div>
+    <div id="propina-wrap" style="display:none;">
+      <label>¿Quieres dejar propina al repartidor?</label>
+      <div class="propina-opciones" id="propina-opciones">
+        <button type="button" class="entrega-op sel" id="propina-op-ninguna" onclick="seleccionarPropina('ninguna')">Sin propina</button>
+        <button type="button" class="entrega-op" id="propina-op-redondeo" onclick="seleccionarPropina('redondeo')">Redondear</button>
+        <button type="button" class="entrega-op" id="propina-op-1" onclick="seleccionarPropina('1')">1 €</button>
+        <button type="button" class="entrega-op" id="propina-op-2" onclick="seleccionarPropina('2')">2 €</button>
+      </div>
+    </div>
     <div id="chk-pagacon-wrap" style="display:none;">
-      <label for="chk-pagacon">¿Con cuánto pagas? (para tu cambio) <span style="color:var(--red)">*</span></label>
-      <input type="number" id="chk-pagacon" min="0" step="0.01" placeholder="Ej. 20" required>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+          <label for="chk-pagacon">¿Con cuánto pagas? (para tu cambio) <span style="color:var(--red)">*</span></label>
+          <input type="number" id="chk-pagacon" min="0" step="0.01" placeholder="Ej. 20" required oninput="actualizarResumenCheckout()">
+        </div>
+        <div style="flex:1;">
+          <label>&nbsp;</label>
+          <div class="caja-info" id="vuelto-info">Vuelto: —</div>
+        </div>
+      </div>
+    </div>
+    <div id="resumen-checkout" style="display:none; margin-top:14px;">
+      <p style="margin:4px 0; font-size:14px; color:var(--muted);">Total pedido: <span id="resumen-total">0,00 €</span></p>
+      <p id="resumen-propina-linea" style="display:none; margin:4px 0; font-size:14px; color:var(--muted);">Propina: <span id="resumen-propina">0,00 €</span></p>
+      <div class="cart-total"><span>GRAN TOTAL</span><span id="resumen-gran-total">0,00 €</span></div>
     </div>
     <div id="checkout-error" class="error-pago" style="display:none;"></div>
     <button class="btn-principal" id="btn-realizar" style="margin-top:18px;" onclick="realizarPedido()">Realizar pedido</button>
@@ -439,8 +468,12 @@ let entregaTipo = 'asap';   // 'asap' | 'programada'
 let pedidoActual = null;
 let ws = null;
 let mapa = null, marcadorMoto = null, marcadorRestaurante = null;
+let propina = 0;
+let propinaTipo = 'ninguna';   // 'ninguna' | 'redondeo' | '1' | '2'
 
 function fmt(n){ return n.toFixed(2).replace('.', ',') + ' €'; }
+function round2(n){ return Math.round(n*100)/100; }
+function montoRedondeo(total){ return round2(Math.ceil(round2(total)) - round2(total)); }
 
 function renderMenu(){
   const tabs = document.getElementById('cat-tabs');
@@ -545,6 +578,7 @@ function renderCarrito(){
     btnContinuar.disabled = carrito.length === 0;
   }
   if (!comprobarHorarioCarrito()) btnContinuar.disabled = true;
+  actualizarResumenCheckout();
 }
 
 const AVISO_PROGRAMAR = 'Cerrado ahora — programa tu pedido para más tarde hoy.';
@@ -673,6 +707,64 @@ function actualizarVisibilidadPagaCon(){
     document.getElementById('chk-pagacon').value = '';
     document.getElementById('chk-pagacon').classList.remove('campo-invalido');
   }
+  actualizarResumenCheckout();
+}
+
+function seleccionarPropina(tipo){
+  propinaTipo = tipo;
+  actualizarResumenCheckout();
+}
+
+function actualizarResumenCheckout(){
+  const total = totalCarrito();
+  const mostrarPropina = (modoPedido === 'domicilio');
+  document.getElementById('propina-wrap').style.display = mostrarPropina ? 'block' : 'none';
+
+  const montoRed = montoRedondeo(total);
+  const chipRedondeo = document.getElementById('propina-op-redondeo');
+  chipRedondeo.style.display = montoRed > 0 ? '' : 'none';
+  chipRedondeo.textContent = `Redondear (+${fmt(montoRed)})`;
+
+  if (!mostrarPropina || (propinaTipo === 'redondeo' && montoRed <= 0)) {
+    propinaTipo = 'ninguna';
+  }
+
+  propina = propinaTipo === 'redondeo' ? montoRed
+    : propinaTipo === '1' ? 1
+    : propinaTipo === '2' ? 2
+    : 0;
+
+  document.getElementById('propina-op-ninguna').classList.toggle('sel', propinaTipo === 'ninguna');
+  chipRedondeo.classList.toggle('sel', propinaTipo === 'redondeo');
+  document.getElementById('propina-op-1').classList.toggle('sel', propinaTipo === '1');
+  document.getElementById('propina-op-2').classList.toggle('sel', propinaTipo === '2');
+
+  const granTotal = round2(total + propina);
+
+  const resumen = document.getElementById('resumen-checkout');
+  if (carrito.length) {
+    resumen.style.display = 'block';
+    document.getElementById('resumen-total').textContent = fmt(total);
+    const lineaPropina = document.getElementById('resumen-propina-linea');
+    if (propina > 0) {
+      lineaPropina.style.display = 'block';
+      document.getElementById('resumen-propina').textContent = fmt(propina);
+    } else {
+      lineaPropina.style.display = 'none';
+    }
+    document.getElementById('resumen-gran-total').textContent = fmt(granTotal);
+  } else {
+    resumen.style.display = 'none';
+  }
+
+  const mostrarVuelto = (pagoSeleccionado === 'efectivo' && modoPedido === 'domicilio');
+  if (mostrarVuelto) {
+    const pagaConVal = parseFloat(document.getElementById('chk-pagacon').value);
+    const vueltoEl = document.getElementById('vuelto-info');
+    vueltoEl.textContent = (isNaN(pagaConVal) || pagaConVal < granTotal)
+      ? 'Vuelto: —'
+      : `Vuelto: ${fmt(round2(pagaConVal - granTotal))}`;
+  }
 }
 
 function abrirCarrito(){
@@ -762,11 +854,12 @@ async function realizarPedido(){
   }
   const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
   const pagaCon = pagaConValido ? vPagaCon : null;
+  const propinaEnviar = modoPedido === 'domicilio' ? propina : 0;
 
   try {
     const res = await fetch(SERVER + '/pedido', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon, entrega: entregaTipo, horaProgramada })
+      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon, propina: propinaEnviar, entrega: entregaTipo, horaProgramada })
     });
     const data = await res.json();
     if (!data.ok) {
@@ -860,9 +953,12 @@ function limpiarFormularioCheckout(){
   document.getElementById('chk-notas').value = '';
   document.getElementById('chk-pagacon').value = '';
   document.getElementById('checkout-error').style.display = 'none';
+  propinaTipo = 'ninguna';
+  propina = 0;
   seleccionarPago('tarjeta');
   seleccionarEntrega('asap');
   document.getElementById('entrega-asap').checked = true;
+  actualizarResumenCheckout();
 }
 
 function pedidoConfirmado(orderId, estado){
