@@ -351,6 +351,7 @@ const PEDIDO_MINIMO = 25;
 const RESTAURANTE = [40.7274, -3.7823];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Lun-Vie 19:30-23:20; Sáb y Dom 12:30-16:00 y 19:30-23:20';
+const AVISO_PAUSA = '⛔ Pedidos en pausa ahora mismo. Estamos a tope; vuelve a intentarlo en un rato.';
 
 function _horaMadrid(){
   const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
@@ -414,6 +415,7 @@ const ESTADOS = ['recibido','preparando','horno','camino','entregado'];
 const PORCENTAJES = { pendiente_pago:0, recibido:10, preparando:35, horno:60, camino:85, entregado:100 };
 
 let carrito = [];
+let pausadoWeb = false;
 let modoPedido = 'domicilio';   // 'domicilio' | 'recogida'
 let pagoSeleccionado = 'tarjeta';
 let entregaTipo = 'asap';   // 'asap' | 'programada'
@@ -543,10 +545,29 @@ function poblarFranjaSelect(franjas){
   }).join('');
 }
 
+async function refrescarEstado(){
+  try {
+    const r = await fetch(SERVER + '/estado', { cache:'no-store' });
+    const j = await r.json();
+    pausadoWeb = !!j.pausado;
+  } catch(e) { /* si falla, no bloquear por esto */ }
+  aplicarPausaUI();
+}
+
+function aplicarPausaUI(){
+  renderCarrito();
+  comprobarHorarioCheckout();
+}
+
 function comprobarHorarioCarrito(){
+  const aviso = document.getElementById('aviso-horario-carrito');
+  if (pausadoWeb) {
+    aviso.style.display = 'block';
+    aviso.textContent = AVISO_PAUSA;
+    return false;
+  }
   const abierto = estaAbierto();
   const franjas = generarFranjas();
-  const aviso = document.getElementById('aviso-horario-carrito');
   if (abierto) {
     aviso.style.display = 'none';
     return true;
@@ -557,12 +578,28 @@ function comprobarHorarioCarrito(){
 }
 
 function comprobarHorarioCheckout(){
-  const abierto = estaAbierto();
-  const franjas = generarFranjas();
   const aviso = document.getElementById('aviso-horario-checkout');
   const opAsap = document.getElementById('entrega-op-asap');
+  const opProgramada = document.getElementById('entrega-op-programada');
   const inputAsap = document.getElementById('entrega-asap');
   const inputProgramada = document.getElementById('entrega-programada');
+
+  if (pausadoWeb) {
+    opAsap.style.display = 'none';
+    opProgramada.style.display = 'none';
+    inputAsap.disabled = true;
+    inputProgramada.disabled = true;
+    document.getElementById('chk-franja').style.display = 'none';
+    aviso.style.display = 'block';
+    aviso.textContent = AVISO_PAUSA;
+    document.getElementById('btn-realizar').disabled = true;
+    return false;
+  }
+  opProgramada.style.display = '';
+  inputProgramada.disabled = false;
+
+  const abierto = estaAbierto();
+  const franjas = generarFranjas();
 
   poblarFranjaSelect(franjas);
 
@@ -614,6 +651,7 @@ function actualizarVisibilidadPagaCon(){
 function abrirCarrito(){
   renderCarrito();
   document.getElementById('overlay-carrito').classList.add('visible');
+  refrescarEstado();
 }
 function cerrarOverlay(id){ document.getElementById(id).classList.remove('visible'); }
 
@@ -627,6 +665,7 @@ function abrirCheckout(){
   actualizarCheckoutModo();
   comprobarHorarioCheckout();
   document.getElementById('overlay-checkout').classList.add('visible');
+  refrescarEstado();
 }
 
 function seleccionarPago(tipo){
@@ -643,6 +682,11 @@ function mostrarErrorCheckout(msg){
 }
 
 async function realizarPedido(){
+  await refrescarEstado();
+  if (pausadoWeb) {
+    return mostrarErrorCheckout(AVISO_PAUSA);
+  }
+
   let horaProgramada = null;
   if (entregaTipo === 'programada') {
     horaProgramada = document.getElementById('chk-franja').value;
@@ -688,6 +732,9 @@ async function realizarPedido(){
     });
     const data = await res.json();
     if (!data.ok) {
+      if (data.error === 'PAUSADO') {
+        return mostrarErrorCheckout(data.mensaje || AVISO_PAUSA);
+      }
       return mostrarErrorCheckout(data.error || 'No se pudo crear el pedido.');
     }
 
@@ -909,6 +956,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && promoOverl
 
 renderMenu();
 renderCarrito();
+refrescarEstado();
 </script>
 </body>
 </html>
