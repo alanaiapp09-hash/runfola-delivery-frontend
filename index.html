@@ -142,10 +142,15 @@ section.vista.activa{display:block;}
 }
 
 label{display:block; font-size:13px; color:var(--muted); margin:14px 0 5px;}
-input[type=text], input[type=tel], textarea{
+input[type=text], input[type=tel], input[type=number], textarea, select{
   width:100%; background:var(--bg3); border:1px solid var(--line); color:var(--cream);
   padding:11px 12px; border-radius:8px; font-size:15px; font-family:'DM Sans',sans-serif;
+  color-scheme:dark;
 }
+input[type=text]:focus, input[type=tel]:focus, input[type=number]:focus, textarea:focus, select:focus{
+  border-color:var(--red); outline:none;
+}
+input.campo-invalido{border-color:var(--red);}
 .pago-opciones{display:flex; gap:10px; margin-top:6px;}
 .pago-op{
   flex:1; border:1px solid var(--line); background:var(--bg3); border-radius:10px; padding:12px;
@@ -154,6 +159,15 @@ input[type=text], input[type=tel], textarea{
 .pago-op.sel{border-color:var(--red); background:rgba(225,38,25,.12);}
 .pago-op b{display:block; font-size:14px;}
 .pago-op span{font-size:11.5px; color:var(--muted);}
+
+.entrega-opciones{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;}
+.entrega-op{
+  flex:1; min-width:140px; border:1px solid var(--line); background:var(--bg3); border-radius:10px; padding:12px;
+  text-align:center; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  font-weight:400; font-size:13.5px; color:var(--cream); font-family:'DM Sans',sans-serif; margin:0;
+}
+.entrega-op input{display:none;}
+.entrega-op.sel{border-color:var(--red); background:rgba(225,38,25,.12); font-weight:700;}
 
 .modo-toggle{display:flex; gap:10px; margin-bottom:14px;}
 .modo-op{
@@ -286,15 +300,18 @@ input[type=text], input[type=tel], textarea{
     <h2>Tus datos</h2>
     <div id="aviso-horario-checkout" class="aviso-minimo" style="display:none;"></div>
     <label>¿Cuándo?</label>
-    <div id="entrega-opciones" style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap;">
-      <label id="entrega-op-asap" style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
+    <div class="entrega-opciones" id="entrega-opciones">
+      <label class="entrega-op sel" id="entrega-op-asap">
         <input type="radio" name="entrega" id="entrega-asap" value="asap" checked onchange="seleccionarEntrega(this.value)"> ⏱️ Lo antes posible
       </label>
-      <label id="entrega-op-programada" style="display:flex;align-items:center;gap:6px;font-weight:normal;margin:0;">
+      <label class="entrega-op" id="entrega-op-programada">
         <input type="radio" name="entrega" id="entrega-programada" value="programada" onchange="seleccionarEntrega(this.value)"> 📅 Programar
       </label>
     </div>
-    <select id="chk-franja" style="display:none;"></select>
+    <div id="chk-franja-wrap" style="display:none;">
+      <label>Hora de entrega</label>
+      <select id="chk-franja"></select>
+    </div>
     <label>Nombre</label>
     <input type="text" id="chk-nombre">
     <label>Teléfono</label>
@@ -317,8 +334,8 @@ input[type=text], input[type=tel], textarea{
       </div>
     </div>
     <div id="chk-pagacon-wrap" style="display:none;">
-      <label>¿Con cuánto pagas?</label>
-      <input type="number" id="chk-pagacon" min="0" step="0.01" placeholder="¿Con cuánto pagas? (para el cambio, opcional)">
+      <label for="chk-pagacon">¿Con cuánto pagas? (para tu cambio) <span style="color:var(--red)">*</span></label>
+      <input type="number" id="chk-pagacon" min="0" step="0.01" placeholder="Ej. 20" required>
     </div>
     <div id="checkout-error" class="error-pago" style="display:none;"></div>
     <button class="btn-principal" id="btn-realizar" style="margin-top:18px;" onclick="realizarPedido()">Realizar pedido</button>
@@ -534,7 +551,13 @@ const AVISO_PROGRAMAR = 'Cerrado ahora — programa tu pedido para más tarde ho
 
 function seleccionarEntrega(tipo){
   entregaTipo = (tipo === 'programada') ? 'programada' : 'asap';
-  document.getElementById('chk-franja').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+  document.getElementById('chk-franja-wrap').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+  actualizarSeleccionEntrega();
+}
+
+function actualizarSeleccionEntrega(){
+  document.getElementById('entrega-op-asap').classList.toggle('sel', entregaTipo === 'asap');
+  document.getElementById('entrega-op-programada').classList.toggle('sel', entregaTipo === 'programada');
 }
 
 function poblarFranjaSelect(franjas){
@@ -589,7 +612,7 @@ function comprobarHorarioCheckout(){
     opProgramada.style.display = 'none';
     inputAsap.disabled = true;
     inputProgramada.disabled = true;
-    document.getElementById('chk-franja').style.display = 'none';
+    document.getElementById('chk-franja-wrap').style.display = 'none';
     aviso.style.display = 'block';
     aviso.textContent = AVISO_PAUSA;
     document.getElementById('btn-realizar').disabled = true;
@@ -620,7 +643,8 @@ function comprobarHorarioCheckout(){
   }
   inputAsap.checked = entregaTipo === 'asap';
   inputProgramada.checked = entregaTipo === 'programada';
-  document.getElementById('chk-franja').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+  document.getElementById('chk-franja-wrap').style.display = entregaTipo === 'programada' ? 'block' : 'none';
+  actualizarSeleccionEntrega();
 
   document.getElementById('btn-realizar').disabled = !abierto && franjas.length === 0;
   return abierto;
@@ -645,7 +669,10 @@ function actualizarCheckoutModo(){
 function actualizarVisibilidadPagaCon(){
   const mostrar = (pagoSeleccionado === 'efectivo' && modoPedido === 'domicilio');
   document.getElementById('chk-pagacon-wrap').style.display = mostrar ? 'block' : 'none';
-  if (!mostrar) document.getElementById('chk-pagacon').value = '';
+  if (!mostrar) {
+    document.getElementById('chk-pagacon').value = '';
+    document.getElementById('chk-pagacon').classList.remove('campo-invalido');
+  }
 }
 
 function abrirCarrito(){
@@ -717,13 +744,24 @@ async function realizarPedido(){
     return mostrarErrorCheckout(`Pedido mínimo ${PEDIDO_MINIMO} €.`);
   }
 
+  const pagaConEl = document.getElementById('chk-pagacon');
+  const vPagaCon = parseFloat(pagaConEl.value);
+  const pagaConValido = !isNaN(vPagaCon) && vPagaCon > 0;
+  if (pagoSeleccionado === 'efectivo' && modoPedido === 'domicilio') {
+    if (!pagaConValido) {
+      pagaConEl.classList.add('campo-invalido');
+      pagaConEl.focus();
+      return mostrarErrorCheckout('Indica con cuánto pagas, para llevarte el cambio.');
+    }
+    pagaConEl.classList.remove('campo-invalido');
+  }
+
   const items = carrito.map(it => ({ nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
   if (modoPedido === 'domicilio') {
     items.push({ nombre: 'Ración de tequeños (regalo)', precio: 0, cantidad: 1 });
   }
   const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
-  const v = parseFloat(document.getElementById('chk-pagacon')?.value);
-  const pagaCon = (isNaN(v) || v <= 0) ? null : v;
+  const pagaCon = pagaConValido ? vPagaCon : null;
 
   try {
     const res = await fetch(SERVER + '/pedido', {
