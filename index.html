@@ -396,7 +396,7 @@ const WS_URL = SERVER.replace('https','wss').replace('http','ws');
 const PEDIDO_MINIMO = 25;
 const RESTAURANTE = [40.7274, -3.7823];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Lun-Vie 19:30-23:20; Sáb y Dom 12:30-16:00 y 19:30-23:20';
+const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Todos los días de 08:00 a 23:20';
 const AVISO_PAUSA = '⛔ Pedidos en pausa ahora mismo. Estamos a tope; vuelve a intentarlo en un rato.';
 
 function _horaMadrid(){
@@ -406,7 +406,7 @@ function _horaMadrid(){
   let hh=parseInt(m.hour,10); if(hh===24) hh=0;
   return {dow:d[m.weekday], min:hh*60+parseInt(m.minute,10)};
 }
-function _ventanas(dow){ return (dow===0||dow===6) ? [[750,960],[1170,1400]] : [[1170,1400]]; }
+function _ventanas(dow){ return [[480,1400]]; }
 function estaAbierto(){ const {dow,min}=_horaMadrid(); return _ventanas(dow).some(([a,b])=>min>=a&&min<=b); }
 
 function generarFranjas(){
