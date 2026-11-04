@@ -199,7 +199,7 @@ input.campo-invalido{border-color:var(--red);}
 .buscar-pedido button{background:var(--bg3); border:1px solid var(--line); color:var(--cream); border-radius:8px; padding:0 14px; cursor:pointer;}
 .vacio{color:var(--muted); text-align:center; padding:30px 0;}
 
-/* Popup promo · tequeños gratis */
+/* Popup promo · obsequio pedido a domicilio */
 .promo-overlay{display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,.72); align-items:center; justify-content:center; padding:16px;}
 .promo-overlay.open{display:flex;}
 .promo-modal{position:relative; background:var(--bg2); width:100%; max-width:380px; border-radius:16px; border:1px solid var(--line); overflow:hidden; text-align:center;}
@@ -216,17 +216,15 @@ input.campo-invalido{border-color:var(--red);}
 </head>
 <body>
 
-<div class="promo-overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-label="Promoción tequeños gratis">
+<div class="promo-overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-label="Promoción obsequio pedido a domicilio">
   <div class="promo-modal" onclick="event.stopPropagation()">
     <button class="promo-x" onclick="closePromo()" aria-label="Cerrar">&times;</button>
     <div class="promo-img">
-      <img src="image/promo-web-opt.jpg" alt="Ración de tequeños gratis con tu pedido a domicilio" loading="eager">
+      <img src="image/promo-2-web.jpg" alt="Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli, según nuestra disponibilidad" loading="eager">
     </div>
     <div class="promo-body">
-      <h3>🧀 ¡TEQUEÑOS GRATIS!</h3>
-      <p>Pide a domicilio y te llevas una ración de tequeños de regalo con tu pedido.</p>
+      <p>Pide a domicilio desde nuestra web y te podrás llevar una ración de Tequeños, Aros de Cebolla o Patatas Alioli, según nuestra disponibilidad. Válido solo en pedidos a domicilio. Una ración por pedido.</p>
       <button type="button" class="promo-cta" id="promoCta" onclick="closePromo()">¡Pedir ahora!</button>
-      <small class="promo-fine">Válido solo en pedidos a domicilio. Una ración por pedido.</small>
     </div>
   </div>
 </div>
@@ -587,7 +585,7 @@ function renderCarrito(){
   if (carrito.length && modoPedido === 'domicilio') {
     html += `
     <div class="cart-item">
-      <div><div class="nombre">🧀 Ración de tequeños (regalo)</div></div>
+      <div><div class="nombre">Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli (según disponibilidad)</div></div>
       <div class="item-precio">0,00 €</div>
     </div>`;
   }
@@ -877,7 +875,7 @@ async function realizarPedido(){
 
   const items = carrito.map(it => ({ nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
   if (modoPedido === 'domicilio') {
-    items.push({ nombre: 'Ración de tequeños (regalo)', precio: 0, cantidad: 1 });
+    items.push({ nombre: 'Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli (según disponibilidad)', precio: 0, cantidad: 1 });
   }
   const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
   const pagaCon = pagaConValido ? vPagaCon : null;
@@ -1100,7 +1098,7 @@ async function registrarPush(orderId){
   }
 }
 
-/* ---- Popup promo tequeños (máx. 1 vez al día) ---- */
+/* ---- Popup promo obsequio domicilio (máx. 1 vez al día) ---- */
 const promoOverlay = document.getElementById('promoOverlay');
 function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; }
