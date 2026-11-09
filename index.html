@@ -205,7 +205,7 @@ input.campo-invalido{border-color:var(--red);}
 .promo-modal{position:relative; background:var(--bg2); width:100%; max-width:380px; border-radius:16px; border:1px solid var(--line); overflow:hidden; text-align:center;}
 .promo-x{position:absolute; top:10px; right:10px; z-index:2; background:rgba(0,0,0,.4); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:18px; display:grid; place-items:center;}
 .promo-img{width:100%; background:var(--bg3);}
-.promo-img img{width:100%; max-height:42vh; object-fit:contain; display:block; border-radius:12px;}
+.promo-img img{display:block; max-height:85vh; width:auto; max-width:100%; object-fit:contain; margin:0 auto; border-radius:12px;}
 .promo-body{padding:20px 18px 22px;}
 .promo-body h3{font-size:21px; margin-bottom:8px;}
 .promo-body p{color:var(--muted); font-size:13.5px; margin-bottom:16px; line-height:1.5;}
@@ -215,6 +215,19 @@ input.campo-invalido{border-color:var(--red);}
 </style>
 </head>
 <body>
+
+<div class="promo-overlay" id="promoOverlayCombo" role="dialog" aria-modal="true" aria-label="Promoción combos Runfola">
+  <div class="promo-modal" onclick="event.stopPropagation()">
+    <button class="promo-x" onclick="closePromoCombo()" aria-label="Cerrar">&times;</button>
+    <div class="promo-img">
+      <img src="image/promo-combo-web.jpg" alt="Promoción Runfola: 2 mini pizzas o porción de pizza con refresco o cerveza" loading="eager">
+    </div>
+    <div class="promo-body">
+      <p>2 mini pizzas o 1 porción de pizza + refresco o cerveza. Todos los días hasta las 19:30 h.</p>
+      <button type="button" class="promo-cta" onclick="closePromoCombo()">¡Ver promoción!</button>
+    </div>
+  </div>
+</div>
 
 <div class="promo-overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-label="Promoción obsequio pedido a domicilio">
   <div class="promo-modal" onclick="event.stopPropagation()">
@@ -1098,17 +1111,25 @@ async function registrarPush(orderId){
   }
 }
 
-/* ---- Popup promo obsequio domicilio (máx. 1 vez al día) ---- */
+/* ---- Popups promo combos + obsequio domicilio, encadenados (máx. 1 vez al día) ---- */
+const promoOverlayCombo = document.getElementById('promoOverlayCombo');
 const promoOverlay = document.getElementById('promoOverlay');
+function openPromoCombo(){ promoOverlayCombo.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closePromoCombo(){ promoOverlayCombo.classList.remove('open'); openPromo(); }
 function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+promoOverlayCombo.addEventListener('click', e => { if (e.target === promoOverlayCombo) closePromoCombo(); });
 promoOverlay.addEventListener('click', e => { if (e.target === promoOverlay) closePromo(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && promoOverlay.classList.contains('open')) closePromo(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (promoOverlayCombo.classList.contains('open')) closePromoCombo();
+  else if (promoOverlay.classList.contains('open')) closePromo();
+});
 (function(){
   const today = new Date().toISOString().slice(0,10);
   const last = localStorage.getItem('runfolaPromoTequenosVistoFecha');
   if (last !== today) {
-    openPromo();
+    openPromoCombo();
     localStorage.setItem('runfolaPromoTequenosVistoFecha', today);
   }
 })();
