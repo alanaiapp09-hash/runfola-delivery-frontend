@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{
   --bg:#1A1613; --bg2:#241E19; --bg3:#2E2721;
@@ -130,6 +129,18 @@ section.vista.activa{display:block;}
 .qty-ctrl button{width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--bg3); color:var(--cream); cursor:pointer;}
 .cart-total{display:flex; justify-content:space-between; font-size:18px; font-weight:700; margin:16px 0;}
 .aviso-minimo{background:rgba(225,38,25,.15); color:#ff9a90; border:1px solid var(--red); border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px;}
+.aviso-horapunta{background:rgba(242,169,0,.14); border:1px solid #F2A900; color:#ffd27a; border-radius:10px; padding:10px 12px; font-size:13px; margin:12px 0; line-height:1.5; text-align:left;}
+.exito-resumen{text-align:left; background:var(--bg3); border-radius:10px; padding:12px 14px; margin:14px 0; font-size:13.5px;}
+.exito-resumen .linea{display:flex; justify-content:space-between; padding:4px 0; color:var(--muted);}
+.exito-resumen .linea b{color:var(--cream);}
+.exito-resumen hr{border:none; border-top:1px solid var(--line); margin:8px 0;}
+.banner-pedido-curso{
+  max-width:720px; margin:0 auto; background:rgba(18,161,80,.14); border:1px solid var(--green); color:#8fe6b8;
+  border-radius:10px; padding:10px 14px; font-size:13.5px; display:none; align-items:center; justify-content:space-between; gap:10px;
+}
+.banner-pedido-curso.visible{display:flex; margin-top:10px;}
+.banner-pedido-curso a{color:#fff; font-weight:700; text-decoration:underline;}
+.banner-pedido-curso .cerrar{background:none; border:none; color:#8fe6b8; font-size:18px; cursor:pointer; line-height:1; padding:0 4px;}
 
 .btn-principal{
   width:100%; background:var(--red); color:#fff; border:none; padding:14px; border-radius:10px;
@@ -193,10 +204,6 @@ input.campo-invalido{border-color:var(--red);}
 .pasos .paso{flex:1;}
 .pasos .paso.ok{color:var(--green); font-weight:700;}
 .pedido-num{font-size:22px; color:var(--red); margin-bottom:4px;}
-#mapa{height:260px; border-radius:12px; margin-top:16px; border:1px solid var(--line);}
-.buscar-pedido{display:flex; gap:8px; margin-bottom:20px;}
-.buscar-pedido input{flex:1;}
-.buscar-pedido button{background:var(--bg3); border:1px solid var(--line); color:var(--cream); border-radius:8px; padding:0 14px; cursor:pointer;}
 .vacio{color:var(--muted); text-align:center; padding:30px 0;}
 
 /* Popup promo · obsequio pedido a domicilio */
@@ -255,6 +262,11 @@ input.campo-invalido{border-color:var(--red);}
   <div class="tricolor"><span class="v"></span><span class="b"></span><span class="r"></span></div>
 </header>
 
+<div class="banner-pedido-curso" id="banner-pedido-curso">
+  <span>📦 Tienes un pedido en curso – <a href="#" id="banner-pedido-link">ver estado</a></span>
+  <button class="cerrar" onclick="cerrarBannerPedidoCurso()" aria-label="Cerrar">&times;</button>
+</div>
+
 <nav class="tabs">
   <button id="tab-carta" class="activa" onclick="mostrarVista('carta')">Carta</button>
   <button id="tab-seguimiento" onclick="mostrarVista('seguimiento')">Mi pedido</button>
@@ -267,25 +279,10 @@ input.campo-invalido{border-color:var(--red);}
   </section>
 
   <section id="vista-seguimiento" class="vista">
-    <div class="buscar-pedido">
-      <input type="text" id="input-buscar-orderid" placeholder="Nº de pedido (ej. RF123456)">
-      <button onclick="buscarPedido()">Buscar</button>
-    </div>
-    <div id="seguimiento-vacio" class="vacio">Introduce tu número de pedido para ver el seguimiento, o realiza un pedido desde la Carta.</div>
-    <div id="seguimiento-contenido" style="display:none;">
-      <div class="pedido-num">Pedido <span id="seg-orderid"></span></div>
-      <div id="seg-estado-txt" style="color:var(--muted); margin-bottom:14px;"></div>
-      <div class="progreso-wrap">
-        <div class="progreso-bar"><div class="progreso-fill" id="progreso-fill"></div></div>
-        <div class="pasos">
-          <div class="paso" data-estado="recibido">📦<br>Recibido</div>
-          <div class="paso" data-estado="preparando">👨‍🍳<br>Preparando</div>
-          <div class="paso" data-estado="horno">🔥<br>Horno</div>
-          <div class="paso" data-estado="camino">🚗<br>En camino</div>
-          <div class="paso" data-estado="entregado">✅<br>Entregado</div>
-        </div>
-      </div>
-      <div id="mapa"></div>
+    <div id="seguimiento-vacio" class="vacio">Aún no tienes un pedido en curso. Realiza un pedido desde la Carta para ver aquí su seguimiento.</div>
+    <div id="seguimiento-contenido" style="display:none; text-align:center; padding:20px 0;">
+      <p style="color:var(--muted); margin-bottom:16px;">Tienes un pedido en curso.</p>
+      <a class="btn-principal" id="seguimiento-link" style="display:block; text-decoration:none; text-align:center;">Ver estado de mi pedido</a>
     </div>
   </section>
 </main>
@@ -393,19 +390,19 @@ input.campo-invalido{border-color:var(--red);}
 
 <div class="overlay" id="overlay-exito">
   <div class="modal" style="text-align:center;">
-    <h2 style="color:var(--green);">¡Pedido confirmado!</h2>
-    <p style="margin:14px 0;">Tu número de pedido es</p>
-    <div class="pedido-num" id="exito-orderid"></div>
-    <button class="btn-principal" onclick="irASeguimiento()">Ver seguimiento</button>
+    <h2 style="color:var(--green);">✅ Pedido nº <span id="exito-orderid"></span> recibido</h2>
+    <p style="margin:14px 0;">Tu pedido ya está en marcha. No hace falta llamar.</p>
+    <div id="exito-horapunta" class="aviso-horapunta" style="display:none;">
+      Entre las 20:00 y las 22:00 tenemos alta demanda: tu pedido puede tardar unos 15 minutos más de lo habitual.
+    </div>
+    <div id="exito-resumen" class="exito-resumen"></div>
+    <a class="btn-principal" id="exito-link-seguimiento" style="display:block; text-decoration:none; text-align:center;">Ver estado de mi pedido</a>
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const SERVER = 'https://runfola-delivery-backend-production.up.railway.app';
-const WS_URL = SERVER.replace('https','wss').replace('http','ws');
 const PEDIDO_MINIMO = 25;
-const RESTAURANTE = [40.7274, -3.7823];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Todos los días de 08:00 a 23:20';
 const AVISO_PAUSA = '⛔ Pedidos en pausa ahora mismo. Estamos a tope; vuelve a intentarlo en un rato.';
@@ -495,17 +492,12 @@ const MENU = [
   ]}
 ];
 
-const ESTADOS = ['recibido','preparando','horno','camino','entregado'];
-const PORCENTAJES = { pendiente_pago:0, recibido:10, preparando:35, horno:60, camino:85, entregado:100 };
-
 let carrito = [];
 let pausadoWeb = false;
 let modoPedido = 'domicilio';   // 'domicilio' | 'recogida'
 let pagoSeleccionado = 'tarjeta';
 let entregaTipo = 'asap';   // 'asap' | 'programada'
 let pedidoActual = null;
-let ws = null;
-let mapa = null, marcadorMoto = null, marcadorRestaurante = null;
 let propina = 0;
 let propinaTipo = 'ninguna';   // 'ninguna' | 'redondeo' | '1' | '2'
 
@@ -907,11 +899,16 @@ async function realizarPedido(){
       return mostrarErrorCheckout(data.error || 'No se pudo crear el pedido.');
     }
 
-    pedidoActual = { orderId: data.orderId, nombre, telefono, correo, direccion: direccionEnvio, modo: modoPedido, items, total, pago: pagoSeleccionado };
+    pedidoActual = {
+      orderId: data.orderId, token: data.token,
+      nombre, telefono, correo, direccion: direccionEnvio, modo: modoPedido,
+      items, total, propina: propinaEnviar, granTotal: round2(total + propinaEnviar),
+      pago: pagoSeleccionado, entregaTipo, horaProgramada: entregaTipo === 'programada' ? horaProgramada : null
+    };
 
     if (pagoSeleccionado === 'efectivo') {
       cerrarOverlay('overlay-checkout');
-      pedidoConfirmado(data.orderId, data.estado);
+      pedidoConfirmado({ orderId: data.orderId, estado: data.estado, token: data.token, horaPunta: data.horaPunta });
     } else {
       await iniciarPagoTarjeta(data.orderId, data.checkoutId);
     }
@@ -950,7 +947,7 @@ async function iniciarPagoTarjeta(orderId, checkoutId){
         confirmarPagoEnServidor(orderId);
       } else if (type === 'error') {
         const err = document.getElementById('pago-error');
-        err.textContent = 'El pago no se pudo completar. Inténtalo de nuevo.';
+        err.textContent = 'El pago no se pudo completar. Tu pedido NO se ha realizado. Puedes intentarlo de nuevo.';
         err.style.display = 'block';
       }
     }
@@ -966,21 +963,23 @@ async function confirmarPagoEnServidor(orderId){
     const data = await res.json();
     if (data.ok) {
       cerrarOverlay('overlay-pago');
-      pedidoConfirmado(orderId, data.estado);
+      pedidoConfirmado({ orderId, estado: data.estado, token: data.token || (pedidoActual && pedidoActual.token), horaPunta: data.horaPunta });
     } else {
       const err = document.getElementById('pago-error');
-      err.textContent = 'El pago aún no se ha confirmado. Si ya pagaste, espera unos segundos e inténtalo otra vez.';
+      err.textContent = 'El pago aún no se ha confirmado. Tu pedido NO se ha realizado todavía. Si ya pagaste, espera unos segundos e inténtalo otra vez.';
       err.style.display = 'block';
     }
   } catch (e) {
     const err = document.getElementById('pago-error');
-    err.textContent = 'Error verificando el pago con el servidor.';
+    err.textContent = 'Error verificando el pago con el servidor. Tu pedido NO se ha realizado.';
     err.style.display = 'block';
   }
 }
 
 function cancelarPago(){
   cerrarOverlay('overlay-pago');
+  document.getElementById('overlay-checkout').classList.add('visible');
+  mostrarErrorCheckout('Pago cancelado. Tu pedido NO se ha realizado.');
 }
 
 function limpiarFormularioCheckout(){
@@ -999,19 +998,45 @@ function limpiarFormularioCheckout(){
   actualizarResumenCheckout();
 }
 
-function pedidoConfirmado(orderId, estado){
+function renderResumenHtml(p){
+  if (!p) return '';
+  const lineas = p.items
+    .map(it => `<div class="linea"><span>${it.cantidad}x ${it.nombre}</span><b>${fmt(it.precio * it.cantidad)}</b></div>`)
+    .join('');
+  const pagoTxt = p.pago === 'tarjeta' ? '💳 Tarjeta (pagado online)' : '💵 Efectivo';
+  const modoTxt = p.modo === 'recogida' ? '🏬 Recogida en el local' : '🛵 A domicilio';
+  const entregaTxt = p.entregaTipo === 'programada' ? ('📅 Programado para las ' + p.horaProgramada) : '⏱️ Lo antes posible';
+  let html = lineas + '<hr>';
+  html += `<div class="linea"><span>Total</span><b>${fmt(p.total)}</b></div>`;
+  if (p.propina > 0) {
+    html += `<div class="linea"><span>Propina</span><b>${fmt(p.propina)}</b></div>`;
+    html += `<div class="linea"><span>Gran total</span><b>${fmt(p.granTotal)}</b></div>`;
+  }
+  html += `<hr><div class="linea"><span>Forma de pago</span><b>${pagoTxt}</b></div>`;
+  html += `<div class="linea"><span>Entrega</span><b>${modoTxt}</b></div>`;
+  html += `<div class="linea"><span>Cuándo</span><b>${entregaTxt}</b></div>`;
+  return html;
+}
+
+function guardarUltimoPedidoLink(token){
+  const link = 'pedido.html?t=' + encodeURIComponent(token);
+  try { localStorage.setItem('runfolaUltimoPedidoLink', link); } catch(e) {}
+  return link;
+}
+
+function pedidoConfirmado(datos){
   carrito = [];
   renderCarrito();
   limpiarFormularioCheckout();
-  document.getElementById('exito-orderid').textContent = orderId;
+  document.getElementById('exito-orderid').textContent = datos.orderId;
+  document.getElementById('exito-horapunta').style.display = datos.horaPunta ? 'block' : 'none';
+  document.getElementById('exito-resumen').innerHTML = renderResumenHtml(pedidoActual);
+  const link = guardarUltimoPedidoLink(datos.token);
+  document.getElementById('exito-link-seguimiento').href = link;
   document.getElementById('overlay-exito').classList.add('visible');
-  registrarPush(orderId);
-  conectarSeguimiento(orderId, estado);
-}
-
-function irASeguimiento(){
-  cerrarOverlay('overlay-exito');
-  mostrarVista('seguimiento');
+  registrarPush(datos.orderId);
+  actualizarBannerPedidoCurso();
+  actualizarSeguimientoTab();
 }
 
 function mostrarVista(vista){
@@ -1019,65 +1044,40 @@ function mostrarVista(vista){
   document.getElementById('vista-seguimiento').classList.toggle('activa', vista === 'seguimiento');
   document.getElementById('tab-carta').classList.toggle('activa', vista === 'carta');
   document.getElementById('tab-seguimiento').classList.toggle('activa', vista === 'seguimiento');
-  if (vista === 'seguimiento' && mapa) {
-    setTimeout(() => mapa.invalidateSize(), 50);
+  if (vista === 'seguimiento') actualizarSeguimientoTab();
+}
+
+function obtenerUltimoPedidoLink(){
+  try { return localStorage.getItem('runfolaUltimoPedidoLink'); } catch(e) { return null; }
+}
+
+function actualizarSeguimientoTab(){
+  const link = obtenerUltimoPedidoLink();
+  const vacio = document.getElementById('seguimiento-vacio');
+  const contenido = document.getElementById('seguimiento-contenido');
+  if (link) {
+    vacio.style.display = 'none';
+    contenido.style.display = 'block';
+    document.getElementById('seguimiento-link').href = link;
+  } else {
+    vacio.style.display = 'block';
+    contenido.style.display = 'none';
   }
 }
 
-function buscarPedido(){
-  const orderId = document.getElementById('input-buscar-orderid').value.trim();
-  if (!orderId) return;
-  conectarSeguimiento(orderId, null);
+function actualizarBannerPedidoCurso(){
+  const link = obtenerUltimoPedidoLink();
+  const banner = document.getElementById('banner-pedido-curso');
+  if (link) {
+    document.getElementById('banner-pedido-link').href = link;
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
 }
 
-function actualizarProgreso(estado){
-  const pct = PORCENTAJES[estado] ?? 0;
-  document.getElementById('progreso-fill').style.width = pct + '%';
-  document.querySelectorAll('.pasos .paso').forEach(p => {
-    const idx = ESTADOS.indexOf(p.dataset.estado);
-    const idxActual = ESTADOS.indexOf(estado);
-    p.classList.toggle('ok', idxActual >= 0 && idx <= idxActual);
-  });
-  const txt = document.getElementById('seg-estado-txt');
-  txt.textContent = estado === 'pendiente_pago'
-    ? 'Esperando confirmación de pago...'
-    : 'Estado actual: ' + estado;
-}
-
-function inicializarMapa(){
-  if (mapa) return;
-  mapa = L.map('mapa').setView(RESTAURANTE, 14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(mapa);
-  marcadorRestaurante = L.marker(RESTAURANTE).addTo(mapa).bindPopup('Runfola Pizzas');
-}
-
-function conectarSeguimiento(orderId, estadoInicial){
-  document.getElementById('seguimiento-vacio').style.display = 'none';
-  document.getElementById('seguimiento-contenido').style.display = 'block';
-  document.getElementById('seg-orderid').textContent = orderId;
-  document.getElementById('input-buscar-orderid').value = orderId;
-  inicializarMapa();
-  setTimeout(() => mapa.invalidateSize(), 50);
-
-  if (estadoInicial) actualizarProgreso(estadoInicial);
-  else actualizarProgreso('recibido');
-
-  if (ws) { try { ws.close(); } catch(e){} }
-  ws = new WebSocket(`${WS_URL}/?role=customer&order=${encodeURIComponent(orderId)}`);
-  ws.onmessage = (ev) => {
-    let msg;
-    try { msg = JSON.parse(ev.data); } catch(e) { return; }
-    if (msg.type === 'estado_update') {
-      actualizarProgreso(msg.estado);
-    } else if (msg.type === 'gps_update') {
-      const pos = [msg.lat, msg.lng];
-      if (marcadorMoto) marcadorMoto.setLatLng(pos);
-      else marcadorMoto = L.marker(pos, { title:'Repartidor' }).addTo(mapa).bindPopup('🛵 Repartidor');
-      mapa.setView(pos, 15);
-    }
-  };
+function cerrarBannerPedidoCurso(){
+  document.getElementById('banner-pedido-curso').classList.remove('visible');
 }
 
 function urlBase64ToUint8Array(base64String){
@@ -1137,6 +1137,8 @@ document.addEventListener('keydown', e => {
 renderMenu();
 renderCarrito();
 refrescarEstado();
+actualizarBannerPedidoCurso();
+actualizarSeguimientoTab();
 </script>
 </body>
 </html>
