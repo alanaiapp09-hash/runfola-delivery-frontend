@@ -46,10 +46,13 @@ header{background:var(--bg2); border-bottom:1px solid var(--line);}
 .header-txt p{margin:2px 0 0; color:var(--muted); font-size:12.5px; line-height:1.5;}
 .header-txt a.tel{color:var(--red); font-weight:700; text-decoration:none;}
 .free-zone{
-  max-width:720px; margin:0 auto; padding:8px 16px; font-size:12px; color:var(--muted);
-  border-bottom:1px solid var(--line);
+  max-width:720px; margin:0 auto; padding:8px 16px 4px; font-size:12px; color:var(--muted);
 }
 .free-zone b{color:var(--green);}
+.horario-info{
+  max-width:720px; margin:0 auto; padding:0 16px 8px; font-size:12px; color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
 
 nav.tabs{
   max-width:720px; margin:0 auto; display:flex; gap:8px; padding:12px 16px 0;
@@ -83,10 +86,19 @@ section.vista.activa{display:block;}
 .item{
   display:flex; justify-content:space-between; align-items:center; gap:10px;
   background:var(--bg2); border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px; margin-bottom:8px;
+  padding:12px 14px; margin-bottom:8px; position:relative; transition:box-shadow .3s, border-color .3s;
 }
+.item.item-destacado{border-color:var(--red); box-shadow:0 0 0 3px rgba(225,38,25,.35);}
 .item-info{flex:1; min-width:0;}
 .item-precio{color:var(--muted); font-size:13px; margin-top:2px;}
+.item-img{
+  width:64px; height:64px; min-width:64px; border-radius:10px; object-fit:cover;
+  background:var(--bg3); margin-right:2px;
+}
+.etiqueta-nueva{
+  display:inline-block; background:var(--green); color:#fff; font-weight:700; font-size:10.5px;
+  letter-spacing:.5px; text-transform:uppercase; padding:2px 8px; border-radius:20px; margin-bottom:4px;
+}
 .btn-add{
   background:var(--red); color:#fff; border:none; width:36px; height:36px; border-radius:50%;
   font-size:20px; line-height:1; cursor:pointer; flex:none;
@@ -194,6 +206,9 @@ input.campo-invalido{border-color:var(--red);}
 }
 .modo-op.sel{border-color:var(--red); background:rgba(225,38,25,.12); color:var(--red);}
 
+.opciones-grupo{margin-bottom:10px;}
+.opciones-item-nombre{color:var(--muted); font-size:13.5px; margin-bottom:14px;}
+
 #sumup-card{min-height:280px; margin:14px 0;}
 .error-pago{color:#ff9a90; font-size:13.5px; margin-top:10px;}
 
@@ -223,15 +238,29 @@ input.campo-invalido{border-color:var(--red);}
 </head>
 <body>
 
-<div class="promo-overlay" id="promoOverlayCombo" role="dialog" aria-modal="true" aria-label="Promoción combos Runfola">
+<div class="promo-overlay" id="promoOverlayPorchetta" role="dialog" aria-modal="true" aria-label="Nueva pizza Porchetta Runfola">
   <div class="promo-modal" onclick="event.stopPropagation()">
-    <button class="promo-x" onclick="closePromoCombo()" aria-label="Cerrar">&times;</button>
+    <button class="promo-x" onclick="cerrarPopupPorchetta()" aria-label="Cerrar">&times;</button>
     <div class="promo-img">
-      <img src="image/promo-combo-web.jpg" alt="Promoción Runfola: 2 mini pizzas o porción de pizza con refresco o cerveza" loading="eager">
+      <img src="image/porchetta-runfola.jpg" alt="Porchetta Runfola: nueva pizza con paleta de cerdo desmechada" loading="eager">
     </div>
     <div class="promo-body">
-      <p>2 mini pizzas o 1 porción de pizza + refresco o cerveza. Todos los días hasta las 19:30 h.</p>
-      <button type="button" class="promo-cta" onclick="closePromoCombo()">¡Ver promoción!</button>
+      <h3>NUEVA · Porchetta Runfola</h3>
+      <p>Masa napolitana, tomate, mozzarella, paleta de cerdo desmechada y Runfo salsa.</p>
+      <p style="font-weight:700; font-size:18px; color:var(--cream); margin-top:-8px;">15,90 €</p>
+      <button type="button" class="promo-cta" onclick="ctaPopupPorchetta()">¡La quiero!</button>
+    </div>
+  </div>
+</div>
+
+<div class="promo-overlay" id="promoOverlayBocata" role="dialog" aria-modal="true" aria-label="Combo Bocata Runfola">
+  <div class="promo-modal" onclick="event.stopPropagation()">
+    <button class="promo-x" onclick="cerrarPopupBocata()" aria-label="Cerrar">&times;</button>
+    <div class="promo-img">
+      <img src="image/promo-bocata.jpg" alt="Combo Bocata de Paleta Runfola: bocata + patatas + refresco o cerveza, 9,90 €" loading="eager">
+    </div>
+    <div class="promo-body">
+      <button type="button" class="promo-cta" onclick="ctaPopupBocata()">¡Lo quiero!</button>
     </div>
   </div>
 </div>
@@ -259,6 +288,7 @@ input.campo-invalido{border-color:var(--red);}
     </div>
   </div>
   <div class="free-zone">Reparto <b>gratis</b> en Soto del Real, Manzanares el Real, Guadalix de la Sierra, El Endrinal y Miraflores de la Sierra.</div>
+  <div class="horario-info">Pedidos online de 12:00 a 23:30 · Miércoles cerrado</div>
   <div class="tricolor"><span class="v"></span><span class="b"></span><span class="r"></span></div>
 </header>
 
@@ -291,6 +321,16 @@ input.campo-invalido{border-color:var(--red);}
   <span class="cart-bar-info">🛒 <span id="cart-bar-cantidad">0 artículos</span><span class="cart-bar-sep">·</span><span id="cart-bar-total">0,00 €</span></span>
   <span class="cart-bar-cta">Ver pedido →</span>
 </button>
+
+<div class="overlay" id="overlay-opciones">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarOverlay('overlay-opciones')">✕</button>
+    <h2 id="opciones-titulo"></h2>
+    <p class="opciones-item-nombre" id="opciones-item-nombre"></p>
+    <div id="opciones-grupos"></div>
+    <button class="btn-principal" id="btn-opciones-añadir" onclick="confirmarOpcionesYAñadir()" disabled>Añadir al carrito</button>
+  </div>
+</div>
 
 <div class="overlay" id="overlay-carrito">
   <div class="modal">
@@ -404,9 +444,9 @@ input.campo-invalido{border-color:var(--red);}
 const SERVER = 'https://runfola-delivery-backend-production.up.railway.app';
 const PEDIDO_MINIMO = 25;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const HORARIO_MENSAJE = 'Ahora mismo no recibimos pedidos. Horario: Todos los días de 08:00 a 23:20';
 const AVISO_PAUSA = '⛔ Pedidos en pausa ahora mismo. Estamos a tope; vuelve a intentarlo en un rato.';
 
+// Horario: de jueves a martes, 12:00-23:30 (23:30 excluido). Miércoles cerrado todo el día.
 function _horaMadrid(){
   const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
   const m={}; for(const x of p) m[x.type]=x.value;
@@ -414,8 +454,17 @@ function _horaMadrid(){
   let hh=parseInt(m.hour,10); if(hh===24) hh=0;
   return {dow:d[m.weekday], min:hh*60+parseInt(m.minute,10)};
 }
-function _ventanas(dow){ return [[480,1400]]; }
-function estaAbierto(){ const {dow,min}=_horaMadrid(); return _ventanas(dow).some(([a,b])=>min>=a&&min<=b); }
+function _ventanas(dow){ if (dow === 3) return []; return [[12*60, 23*60+30]]; }
+function estaAbierto(){ const {dow,min}=_horaMadrid(); return _ventanas(dow).some(([a,b])=>min>=a&&min<b); }
+
+function textoProximaApertura(){
+  const { dow, min } = _horaMadrid();
+  if (dow === 3) return 'Los miércoles cerramos. Volvemos el jueves a las 12:00';
+  if (min < 12*60) return 'Abrimos hoy a las 12:00';
+  const manana = (dow + 1) % 7;
+  if (manana === 3) return 'Abrimos el jueves a las 12:00';
+  return 'Abrimos mañana a las 12:00';
+}
 
 function generarFranjas(){
   const { dow, min } = _horaMadrid();
@@ -424,12 +473,20 @@ function generarFranjas(){
   const franjas = [];
   for (const [ini, fin] of _ventanas(dow)){
     let start = Math.max(ini, Math.ceil(desde/15)*15);
-    for (let t = start; t <= fin; t += 15) franjas.push(t);
+    for (let t = start; t < fin; t += 15) franjas.push(t);
   }
   return franjas;                  // minutos desde medianoche
 }
 function minutosAHHMM(t){ const h=Math.floor(t/60), m=t%60;
   return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+
+// Refrescos de la carta (única fuente: se reutiliza también como opción de bebida del Combo Bocata)
+const REFRESCOS = [
+  ['Coca-Cola',2.80],['Coca-Cola Zero',2.80],['Fanta Limón',2.80],['Fanta Naranja',2.80],
+  ['Nestea',2.80],['Aquarius Limón',2.80],['Aquarius Naranja',2.80],
+  ['Agua con Gas',3.00],['Agua Solán de Cabras 50 cl',2.00],['Agua 1,5 L',4.00]
+];
+const BEBIDAS_COMBO_BOCATA = REFRESCOS.map(r => r[0]).concat('Cerveza Mahou Clásica');
 
 const MENU = [
   { cat:'Pizzas', items:[
@@ -450,7 +507,19 @@ const MENU = [
     ['Hawaiana',13.90,'Base de tomate, piña, jamón York, mozzarella'],
     ['A tu gusto',14.90,'Base bianca, pesto, bbq, carbonara o tomate, mozzarella + 1 ingrediente a elegir']
   ]},
+  { cat:'Bocata', items:[
+    { id:'bocata-pan-brioche', nombre:'Bocata Pan Brioche', precio:6.90,
+      desc:'Pan brioche con paleta de cerdo desmechada y nuestra Runfo salsa, la salsa de la casa.',
+      imagen:'image/promo-bocata.jpg' },
+    { id:'combo-bocata', nombre:'Combo Bocata', precio:9.90,
+      desc:'Bocata Pan Brioche de paleta + patatas + refresco o cerveza Mahou Clásica.',
+      imagen:'image/promo-bocata.jpg',
+      opciones:[ { id:'bebida', label:'Elige tu bebida', requerido:true, valores: BEBIDAS_COMBO_BOCATA } ] }
+  ]},
   { cat:'Especiales', items:[
+    { id:'porchetta-runfola', nombre:'Porchetta Runfola', precio:15.90,
+      desc:'Masa napolitana, salsa de tomate, queso mozzarella, paleta de cerdo desmechada y Runfo salsa.',
+      imagen:'image/porchetta-runfola.jpg', etiqueta:'NUEVA' },
     ['Gourmet',15.90,'Base blanca, pimientos caramelizados, gorgonzola, mozzarella'],
     ['BBQ Pollo Asado',15.90,'Base de tomate, salsa BBQ, pollo asado, bacon, mozzarella'],
     ['BBQ Pulled Pork',15.90,'Base de tomate, salsa BBQ, pulled pork, cebolla, bacon, mozzarella'],
@@ -484,15 +553,12 @@ const MENU = [
     { nombre:'Cervezas', items:[
       ['Mahou verde lata',2.00],['Mahou verde tercio',3.50],["Tercio 0'0",3.20],['Tercio Sin Gluten',3.20]
     ]},
-    { nombre:'Refrescos', items:[
-      ['Coca-Cola',2.80],['Coca-Cola Zero',2.80],['Fanta Limón',2.80],['Fanta Naranja',2.80],
-      ['Nestea',2.80],['Aquarius Limón',2.80],['Aquarius Naranja',2.80],
-      ['Agua con Gas',3.00],['Agua Solán de Cabras 50 cl',2.00],['Agua 1,5 L',4.00]
-    ]}
+    { nombre:'Refrescos', items: REFRESCOS }
   ]}
 ];
 
 let carrito = [];
+let ITEMS_INDEX = {};
 let pausadoWeb = false;
 let modoPedido = 'domicilio';   // 'domicilio' | 'recogida'
 let pagoSeleccionado = 'tarjeta';
@@ -526,33 +592,100 @@ function mostrarCategoria(i){
   document.querySelectorAll('.categoria-panel').forEach((panel, idx) => panel.classList.toggle('activa', idx === i));
 }
 
-function itemHtml([nombre, precio, desc, id]){
-  const itemId = id || nombre;
-  return `<div class="item">
+function normalizarItem(itRaw){
+  if (Array.isArray(itRaw)) {
+    const [nombre, precio, desc, id] = itRaw;
+    return { id: id || nombre, nombre, precio, desc };
+  }
+  return { ...itRaw, id: itRaw.id || itRaw.nombre };
+}
+
+function itemHtml(itRaw){
+  const it = normalizarItem(itRaw);
+  ITEMS_INDEX[it.id] = it;
+  const tieneOpciones = Array.isArray(it.opciones) && it.opciones.length > 0;
+  const onclickBtn = tieneOpciones
+    ? `abrirOpciones('${encodeURIComponent(it.id)}')`
+    : `añadirCarrito('${encodeURIComponent(it.id)}', '${encodeURIComponent(it.nombre)}', ${it.precio})`;
+  return `<div class="item" data-item-id="${it.id}">
+    ${it.imagen ? `<img class="item-img" src="${it.imagen}" alt="${it.nombre}" loading="lazy">` : ''}
     <div class="item-info">
-      <div class="plato-nombre">${nombre}</div>
-      ${desc ? `<div class="plato-desc">${desc}</div>` : ''}
-      <div class="item-precio">${fmt(precio)}</div>
+      ${it.etiqueta ? `<span class="etiqueta-nueva">${it.etiqueta}</span><br>` : ''}
+      <div class="plato-nombre">${it.nombre}</div>
+      ${it.desc ? `<div class="plato-desc">${it.desc}</div>` : ''}
+      <div class="item-precio">${fmt(it.precio)}</div>
     </div>
-    <button class="btn-add" onclick="añadirCarrito('${encodeURIComponent(itemId)}', '${encodeURIComponent(nombre)}', ${precio})">+</button>
+    <button class="btn-add" onclick="${onclickBtn}">+</button>
   </div>`;
 }
 
-function añadirCarrito(idCod, nombreCod, precio){
+function añadirCarrito(idCod, nombreCod, precio, detalleCod){
   const id = decodeURIComponent(idCod);
   const nombre = decodeURIComponent(nombreCod);
-  const existente = carrito.find(it => it.id === id);
+  const detalle = detalleCod ? decodeURIComponent(detalleCod) : null;
+  const clave = detalle ? id + '::' + detalle : id;
+  const existente = carrito.find(it => it.clave === clave);
   if (existente) existente.cantidad++;
-  else carrito.push({ id, nombre, precio, cantidad:1 });
+  else carrito.push({ id, clave, nombre, precio, cantidad:1, detalle });
   renderCarrito();
 }
 
-function cambiarCantidad(id, delta){
-  const it = carrito.find(i => i.id === id);
+function cambiarCantidad(clave, delta){
+  const it = carrito.find(i => i.clave === clave);
   if (!it) return;
   it.cantidad += delta;
-  if (it.cantidad <= 0) carrito = carrito.filter(i => i.id !== id);
+  if (it.cantidad <= 0) carrito = carrito.filter(i => i.clave !== clave);
   renderCarrito();
+}
+
+/* ---- Opciones/variantes obligatorias (p.ej. elegir bebida de un combo) ---- */
+let opcionesPendiente = null;
+
+function abrirOpciones(idCod){
+  const id = decodeURIComponent(idCod);
+  const it = ITEMS_INDEX[id];
+  if (!it) return;
+  opcionesPendiente = { id: it.id, nombre: it.nombre, precio: it.precio, grupos: it.opciones, seleccion: {} };
+  document.getElementById('opciones-titulo').textContent = 'Elige tus opciones';
+  document.getElementById('opciones-item-nombre').textContent = it.nombre;
+  renderGruposOpciones();
+  document.getElementById('overlay-opciones').classList.add('visible');
+}
+
+function renderGruposOpciones(){
+  const cont = document.getElementById('opciones-grupos');
+  cont.innerHTML = opcionesPendiente.grupos.map(g => `
+    <div class="opciones-grupo">
+      <label>${g.label}${g.requerido ? ' *' : ''}</label>
+      <select onchange="seleccionarOpcion('${g.id}', this.value)">
+        <option value="">Selecciona...</option>
+        ${g.valores.map(v => `<option value="${encodeURIComponent(v)}">${v}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+  actualizarBotonOpciones();
+}
+
+function seleccionarOpcion(grupoId, valorCod){
+  opcionesPendiente.seleccion[grupoId] = valorCod ? decodeURIComponent(valorCod) : null;
+  actualizarBotonOpciones();
+}
+
+function actualizarBotonOpciones(){
+  const completo = opcionesPendiente.grupos.every(g => !g.requerido || opcionesPendiente.seleccion[g.id]);
+  document.getElementById('btn-opciones-añadir').disabled = !completo;
+}
+
+function confirmarOpcionesYAñadir(){
+  const detalle = opcionesPendiente.grupos.map(g => opcionesPendiente.seleccion[g.id]).filter(Boolean).join(', ');
+  añadirCarrito(
+    encodeURIComponent(opcionesPendiente.id),
+    encodeURIComponent(opcionesPendiente.nombre),
+    opcionesPendiente.precio,
+    encodeURIComponent(detalle)
+  );
+  cerrarOverlay('overlay-opciones');
+  opcionesPendiente = null;
 }
 
 function totalCarrito(){
@@ -577,12 +710,13 @@ function renderCarrito(){
     <div class="cart-item">
       <div>
         <div class="nombre">${it.nombre}</div>
+        ${it.detalle ? `<div class="item-precio">${it.detalle}</div>` : ''}
         <div class="item-precio">${fmt(it.precio)} / ud.</div>
       </div>
       <div class="qty-ctrl">
-        <button onclick="cambiarCantidad('${it.id.replace(/'/g,"\\'")}', -1)">−</button>
+        <button onclick="cambiarCantidad('${it.clave.replace(/'/g,"\\'")}', -1)">−</button>
         <span>${it.cantidad}</span>
-        <button onclick="cambiarCantidad('${it.id.replace(/'/g,"\\'")}', 1)">+</button>
+        <button onclick="cambiarCantidad('${it.clave.replace(/'/g,"\\'")}', 1)">+</button>
       </div>
     </div>
   `).join('') : '<p class="vacio">Tu carrito está vacío.</p>';
@@ -610,8 +744,6 @@ function renderCarrito(){
   if (!comprobarHorarioCarrito()) btnContinuar.disabled = true;
   actualizarResumenCheckout();
 }
-
-const AVISO_PROGRAMAR = 'Cerrado ahora — programa tu pedido para más tarde hoy.';
 
 function seleccionarEntrega(tipo){
   entregaTipo = (tipo === 'programada') ? 'programada' : 'asap';
@@ -660,7 +792,7 @@ function comprobarHorarioCarrito(){
     return true;
   }
   aviso.style.display = 'block';
-  aviso.textContent = franjas.length > 0 ? AVISO_PROGRAMAR : HORARIO_MENSAJE;
+  aviso.textContent = textoProximaApertura();
   return franjas.length > 0;
 }
 
@@ -700,10 +832,10 @@ function comprobarHorarioCheckout(){
     inputAsap.disabled = true;
     entregaTipo = 'programada';
     aviso.style.display = 'block';
-    aviso.textContent = AVISO_PROGRAMAR;
+    aviso.textContent = textoProximaApertura();
   } else {
     aviso.style.display = 'block';
-    aviso.textContent = HORARIO_MENSAJE;
+    aviso.textContent = textoProximaApertura();
   }
   inputAsap.checked = entregaTipo === 'asap';
   inputProgramada.checked = entregaTipo === 'programada';
@@ -843,7 +975,7 @@ async function realizarPedido(){
       return mostrarErrorCheckout('Elige una hora de entrega');
     }
   } else if (!estaAbierto()) {
-    return mostrarErrorCheckout(HORARIO_MENSAJE);
+    return mostrarErrorCheckout(textoProximaApertura());
   }
 
   const nombre = document.getElementById('chk-nombre').value.trim();
@@ -878,7 +1010,10 @@ async function realizarPedido(){
     pagaConEl.classList.remove('campo-invalido');
   }
 
-  const items = carrito.map(it => ({ nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
+  const items = carrito.map(it => ({
+    nombre: it.detalle ? `${it.nombre} (${it.detalle})` : it.nombre,
+    precio: it.precio, cantidad: it.cantidad
+  }));
   if (modoPedido === 'domicilio') {
     items.push({ nombre: 'Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli (según disponibilidad)', precio: 0, cantidad: 1 });
   }
@@ -1111,25 +1246,68 @@ async function registrarPush(orderId){
   }
 }
 
-/* ---- Popups promo combos + obsequio domicilio, encadenados (máx. 1 vez al día) ---- */
-const promoOverlayCombo = document.getElementById('promoOverlayCombo');
+/* ---- Popups Porchetta Runfola + Combo Bocata + obsequio domicilio, encadenados (máx. 1 vez al día) ---- */
+const promoOverlayPorchetta = document.getElementById('promoOverlayPorchetta');
+const promoOverlayBocata = document.getElementById('promoOverlayBocata');
 const promoOverlay = document.getElementById('promoOverlay');
-function openPromoCombo(){ promoOverlayCombo.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closePromoCombo(){ promoOverlayCombo.classList.remove('open'); openPromo(); }
+let cadenaPopupsDetenida = false;
+
+function irAItemDestacado(nombreCategoria, itemId){
+  mostrarVista('carta');
+  const idx = MENU.findIndex(c => c.cat === nombreCategoria);
+  if (idx >= 0) mostrarCategoria(idx);
+  if (itemId) {
+    setTimeout(() => {
+      const el = document.querySelector(`[data-item-id="${itemId}"]`);
+      if (!el) return;
+      el.scrollIntoView({ behavior:'smooth', block:'center' });
+      el.classList.add('item-destacado');
+      setTimeout(() => el.classList.remove('item-destacado'), 2000);
+    }, 100);
+  }
+}
+
+function openPopupPorchetta(){ promoOverlayPorchetta.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function cerrarPopupPorchetta(){
+  promoOverlayPorchetta.classList.remove('open');
+  if (!cadenaPopupsDetenida) openPopupBocata(); else document.body.style.overflow = '';
+}
+function ctaPopupPorchetta(){
+  cadenaPopupsDetenida = true;
+  promoOverlayPorchetta.classList.remove('open');
+  document.body.style.overflow = '';
+  irAItemDestacado('Especiales', 'porchetta-runfola');
+}
+
+function openPopupBocata(){ promoOverlayBocata.classList.add('open'); document.body.style.overflow = 'hidden'; }
+function cerrarPopupBocata(){
+  promoOverlayBocata.classList.remove('open');
+  if (!cadenaPopupsDetenida) openPromo(); else document.body.style.overflow = '';
+}
+function ctaPopupBocata(){
+  cadenaPopupsDetenida = true;
+  promoOverlayBocata.classList.remove('open');
+  document.body.style.overflow = '';
+  irAItemDestacado('Bocata', null);
+}
+
 function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; }
-promoOverlayCombo.addEventListener('click', e => { if (e.target === promoOverlayCombo) closePromoCombo(); });
+
+promoOverlayPorchetta.addEventListener('click', e => { if (e.target === promoOverlayPorchetta) cerrarPopupPorchetta(); });
+promoOverlayBocata.addEventListener('click', e => { if (e.target === promoOverlayBocata) cerrarPopupBocata(); });
 promoOverlay.addEventListener('click', e => { if (e.target === promoOverlay) closePromo(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (promoOverlayCombo.classList.contains('open')) closePromoCombo();
+  if (promoOverlayPorchetta.classList.contains('open')) cerrarPopupPorchetta();
+  else if (promoOverlayBocata.classList.contains('open')) cerrarPopupBocata();
   else if (promoOverlay.classList.contains('open')) closePromo();
 });
 (function(){
   const today = new Date().toISOString().slice(0,10);
   const last = localStorage.getItem('runfolaPromoTequenosVistoFecha');
   if (last !== today) {
-    openPromoCombo();
+    openPopupPorchetta();
     localStorage.setItem('runfolaPromoTequenosVistoFecha', today);
   }
 })();
