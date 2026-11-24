@@ -1,6 +1,6 @@
 // Service Worker — Runfola Delivery PWA + Push
 // Sube la versión del nombre de caché en cada despliegue para forzar la limpieza de cachés viejas.
-const CACHE_VERSION = 'runfola-v4';
+const CACHE_VERSION = 'runfola-v5';
 const CACHE_HTML = `${CACHE_VERSION}-html`;
 const CACHE_ASSETS = `${CACHE_VERSION}-assets`;
 

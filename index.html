@@ -612,8 +612,8 @@ function minutosAHHMM(t){ const h=Math.floor(t/60), m=t%60;
 
 // Refrescos de la carta (única fuente: se reutiliza también como opción de bebida del Combo Bocata)
 const REFRESCOS = [
-  ['Coca-Cola',2.80],['Coca-Cola Zero',2.80],['Fanta Limón',2.80],['Fanta Naranja',2.80],
-  ['Nestea',2.80],['Aquarius Limón',2.80],['Aquarius Naranja',2.80],
+  ['Coca-Cola',2.50],['Coca-Cola Zero',2.50],['Fanta Limón',2.50],['Fanta Naranja',2.50],
+  ['Nestea',2.50],['Aquarius Limón',2.50],['Aquarius Naranja',2.50],
   ['Agua con Gas',3.00],['Agua Solán de Cabras 50 cl',2.00],['Agua 1,5 L',4.00]
 ];
 const BEBIDAS_COMBO_BOCATA = REFRESCOS.map(r => r[0]).concat('Cerveza Mahou Clásica');
@@ -681,7 +681,8 @@ const MENU = [
   ]},
   { cat:'Bebidas', sub:[
     { nombre:'Cervezas', items:[
-      ['Mahou verde lata',2.00],['Mahou verde tercio',3.20],["Tercio 0'0",3.20]
+      ['Mahou verde lata',2.00],['Mahou tercio',3.20],['Alhambra tercio',3.20],
+      ['Mahou Tostada 0,0',3.20],['Mahou Rubia 0,0',3.20]
     ]},
     { nombre:'Refrescos', items: REFRESCOS }
   ]}
