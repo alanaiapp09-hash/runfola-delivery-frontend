@@ -279,6 +279,7 @@ input.campo-invalido{border-color:var(--red);}
   border-radius:10px; font-weight:700; cursor:pointer; font-size:14px;
 }
 #pantalla-notif{background:var(--bg2); color:var(--cream);}
+#aviso-qr-escritorio{background:var(--bg2); color:var(--cream);}
 #pantalla-notif .emoji-grande{font-size:52px;}
 .notif-legal-grande{color:var(--muted); font-size:13px; max-width:320px; line-height:1.5;}
 .notif-pantalla-botones{display:flex; gap:12px; width:100%; max-width:320px;}
@@ -343,6 +344,12 @@ input.campo-invalido{border-color:var(--red);}
     <button class="btn-principal" onclick="clicActivarNotifPantalla()">Activar</button>
     <button class="btn-secundario" onclick="clicAhoraNoNotifPantalla()">Ahora no</button>
   </div>
+</div>
+
+<div id="aviso-qr-escritorio" class="full-pantalla">
+  <img src="image/qr-app.png" alt="Código QR para descargar la app de Runfola" width="180" height="180" style="border-radius:12px;">
+  <p class="bienvenida-texto-secundario" style="color:var(--cream);">Escanea con tu móvil para descargar la app de Runfola</p>
+  <button class="btn-secundario" onclick="cerrarAvisoQrEscritorio()">Seguir en la web</button>
 </div>
 
 <div class="promo-overlay" id="promoOverlayPorchetta" role="dialog" aria-modal="true" aria-label="Nueva pizza Porchetta Runfola">
@@ -674,7 +681,7 @@ const MENU = [
   ]},
   { cat:'Bebidas', sub:[
     { nombre:'Cervezas', items:[
-      ['Mahou verde lata',2.00],['Mahou verde tercio',3.50],["Tercio 0'0",3.20],['Tercio Sin Gluten',3.20]
+      ['Mahou verde lata',2.00],['Mahou verde tercio',3.20],["Tercio 0'0",3.20]
     ]},
     { nombre:'Refrescos', items: REFRESCOS }
   ]}
@@ -1696,8 +1703,25 @@ function abrirBienvenidaManual(){
   mostrarBienvenida(() => {});
 }
 
+const PARAM_INSTALAR = new URLSearchParams(location.search).get('instalar') === '1';
+
 function debeMostrarBienvenida(){
-  return esMovilOTablet() && !esStandalone() && !marcaCerradaReciente(BIENVENIDA_DISMISS_KEY);
+  if (esStandalone()) return false; // instalada: se ignora el parámetro ?instalar=1
+  if (PARAM_INSTALAR && esMovilOTablet()) return true; // fuerza la bienvenida aunque se hubiera descartado
+  return esMovilOTablet() && !marcaCerradaReciente(BIENVENIDA_DISMISS_KEY);
+}
+
+function debeMostrarAvisoQrEscritorio(){
+  return PARAM_INSTALAR && !esStandalone() && !esMovilOTablet();
+}
+function cerrarAvisoQrEscritorio(){
+  document.getElementById('aviso-qr-escritorio').classList.remove('visible');
+  const cb = window._onCerrarAvisoQr; window._onCerrarAvisoQr = null;
+  if (cb) cb();
+}
+function mostrarAvisoQrEscritorio(onContinuar){
+  window._onCerrarAvisoQr = onContinuar;
+  document.getElementById('aviso-qr-escritorio').classList.add('visible');
 }
 
 /* ---- Pantalla 2: Notificaciones ---- */
@@ -1747,7 +1771,9 @@ async function pasoNotificaciones(){
 }
 
 function iniciarOnboarding(){
-  if (debeMostrarBienvenida()) {
+  if (debeMostrarAvisoQrEscritorio()) {
+    mostrarAvisoQrEscritorio(pasoNotificaciones);
+  } else if (debeMostrarBienvenida()) {
     mostrarBienvenida(pasoNotificaciones);
   } else {
     pasoNotificaciones();
