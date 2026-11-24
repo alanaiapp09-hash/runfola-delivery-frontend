@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sin conexión — Runfola Pizzas</title>
+<link rel="icon" href="icons/favicon-32.png">
+<style>
+  :root{ --bg:#1A1613; --red:#E12619; --cream:#F6F0E7; --muted:#A99E8F; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--cream); font-family:system-ui,sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px; text-align:center;
+  }
+  img{width:96px; height:96px; margin-bottom:20px;}
+  h1{font-size:18px; margin:0 0 8px;}
+  p{color:var(--muted); font-size:14px; max-width:320px; line-height:1.5; margin:0;}
+  button{
+    margin-top:22px; background:var(--red); color:#fff; border:none; padding:11px 22px;
+    border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <img src="icons/icon-192.png" alt="Runfola">
+  <h1>Sin conexión</h1>
+  <p>Revisa tu internet para hacer tu pedido.</p>
+  <button onclick="location.reload()">Reintentar</button>
+</body>
+</html>

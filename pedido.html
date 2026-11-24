@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Seguimiento de pedido — Runfola Pizzas</title>
-<link rel="icon" href="https://i.imgur.com/J3rvA7x.png">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#E12619">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RUNFOLA">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -63,6 +68,17 @@ main{max-width:560px; margin:0 auto; padding:20px 16px 40px;}
 
 #mapa{height:240px; border-radius:12px; margin-top:16px; border:1px solid var(--line); display:none;}
 
+.notif-wrap{margin-top:16px;}
+.btn-notif{
+  background:var(--red); color:#fff; border:none; padding:11px 14px; border-radius:8px;
+  font-weight:700; font-size:13.5px; cursor:pointer; width:100%;
+}
+.btn-notif:disabled{background:var(--bg3); color:var(--muted); cursor:not-allowed;}
+.notif-estado.on{color:var(--green); font-size:13.5px;}
+.check-promos{display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:12.5px; color:var(--muted); text-align:left;}
+.check-promos input{margin-top:3px;}
+.legal-promos{display:block; font-size:11px; color:var(--muted); margin-top:6px;}
+
 .vacio, .error-box{color:var(--muted); text-align:center; padding:40px 16px;}
 .error-box b{color:var(--cream); display:block; margin-bottom:6px; font-size:16px;}
 
@@ -80,7 +96,7 @@ main{max-width:560px; margin:0 auto; padding:20px 16px 40px;}
 
 <header>
   <div class="header-inner">
-    <div class="logo-circle"><img src="https://i.imgur.com/J3rvA7x.png" alt="Runfola"></div>
+    <div class="logo-circle"><img src="icons/icon-192.png" alt="Runfola"></div>
     <div class="header-txt">
       <h1>Runfola Pizzas</h1>
       <p>Seguimiento de tu pedido</p>
@@ -108,6 +124,7 @@ main{max-width:560px; margin:0 auto; padding:20px 16px 40px;}
         Entre las 20:00 y las 22:00 tenemos alta demanda: tu pedido puede tardar unos 15 minutos más de lo habitual.
       </div>
       <div id="mapa"></div>
+      <div class="notif-wrap" id="notif-wrap"></div>
     </div>
     <div style="text-align:center;"><a class="btn-volver" href="index.html">Volver a la carta</a></div>
   </div>
@@ -139,10 +156,76 @@ const PORCENTAJES = { pendiente_pago: 0, recibido: 10, preparando: 40, horno: 55
 const params = new URLSearchParams(location.search);
 const token = params.get('t');
 
-let mapa = null, marcadorMoto = null, ws = null, pollTimer = null;
+let mapa = null, marcadorMoto = null, ws = null, pollTimer = null, numeroPedido = null;
 
 function guardarUltimoPedido(){
   try { localStorage.setItem('runfolaUltimoPedidoLink', 'pedido.html?t=' + encodeURIComponent(token)); } catch(e) {}
+}
+function guardarUltimoOrderId(orderId){
+  try { localStorage.setItem('runfolaUltimoOrderId', orderId); } catch(e) {}
+}
+
+/* ---- Service worker + notificaciones push (mismo mecanismo que index.html) ---- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+const esStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const esIOSSinInstalar = () => esIOS() && !esStandalone();
+function soportaPush(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function crearSuscripcionPush(){
+  const reg = await navigator.serviceWorker.register('/sw.js');
+  const permiso = await Notification.requestPermission();
+  if (permiso !== 'granted') return null;
+  const res = await fetch(SERVER + '/push/clave-publica');
+  const { key } = await res.json();
+  if (!key) return null;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
+  return sub;
+}
+
+async function clicAvisarPedido(){
+  const btn = document.getElementById('notif-btn');
+  const chk = document.getElementById('notif-promos');
+  if (btn) { btn.disabled = true; btn.textContent = 'Activando…'; }
+  try {
+    const sub = await crearSuscripcionPush();
+    if (!sub) throw new Error('sin permiso');
+    const json = sub.toJSON();
+    await fetch(SERVER + '/push/suscribir', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys, promos: !!(chk && chk.checked), orderId: numeroPedido })
+    });
+    document.getElementById('notif-wrap').innerHTML = '<p class="notif-estado on">🔔 Te avisaremos cuando cambie el estado de tu pedido.</p>';
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔔 Avísame cuando mi pedido cambie de estado'; }
+  }
+}
+
+function renderBloqueNotif(){
+  const wrap = document.getElementById('notif-wrap');
+  if (!wrap || !numeroPedido) return;
+  if (esIOSSinInstalar()) {
+    wrap.innerHTML = '<button class="btn-notif" disabled>Instala la app para recibir avisos</button>';
+    return;
+  }
+  if (!soportaPush()) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <button class="btn-notif" id="notif-btn" onclick="clicAvisarPedido()">🔔 Avísame cuando mi pedido cambie de estado</button>
+    <label class="check-promos"><input type="checkbox" id="notif-promos"> Quiero recibir también promociones y novedades de Runfola</label>
+    <span class="legal-promos">Puedes darte de baja cuando quieras desde Notificaciones.</span>
+  `;
 }
 
 function mostrar(vista){
@@ -171,6 +254,11 @@ function renderPasos(tipo, estado){
 
 function renderEstado(datos){
   document.getElementById('p-numero').textContent = datos.numero;
+  if (numeroPedido !== datos.numero) {
+    numeroPedido = datos.numero;
+    guardarUltimoOrderId(numeroPedido);
+    renderBloqueNotif();
+  }
   const textoEstado = datos.estado === 'pendiente_pago'
     ? 'Esperando confirmación de pago…'
     : 'Estado actual: ' + datos.estado;

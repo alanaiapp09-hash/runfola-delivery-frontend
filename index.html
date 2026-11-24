@@ -4,10 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Runfola Pizzas — Pedidos a domicilio</title>
-<link rel="icon" href="https://i.imgur.com/J3rvA7x.png">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#E12619">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RUNFOLA">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@400;500;700&family=Poppins:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#1A1613; --bg2:#241E19; --bg3:#2E2721;
@@ -234,9 +240,72 @@ input.campo-invalido{border-color:var(--red);}
 .promo-cta{display:inline-flex; align-items:center; gap:8px; background:var(--red); color:#fff; font-weight:700; font-size:15px; border:none; padding:12px 26px; border-radius:100px; cursor:pointer; font-family:'DM Sans',sans-serif;}
 .promo-cta:active{background:var(--red-deep);}
 .promo-fine{display:block; font-size:11px; color:var(--muted); margin-top:12px;}
+
+/* Pantalla de carga (solo en modo standalone/instalado) */
+#splash{
+  position:fixed; inset:0; z-index:999; background:var(--red);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:14px; transition:opacity .35s ease; opacity:1;
+}
+#splash.oculto{opacity:0; pointer-events:none;}
+#splash img{width:96px; height:96px;}
+#splash span{font-family:'Poppins',sans-serif; font-weight:700; font-size:22px; color:#fff; letter-spacing:1px;}
+
+/* Aviso de instalación (barra inferior discreta) */
+.install-bar{
+  position:fixed; left:12px; right:12px; bottom:12px; z-index:200;
+  background:var(--bg2); border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px; display:none; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.4);
+  max-width:520px; margin:0 auto; font-size:13.5px;
+}
+.install-bar.visible{display:flex;}
+.install-bar-txt{flex:1; line-height:1.4;}
+.install-bar button.instalar{
+  background:var(--red); color:#fff; border:none; padding:8px 14px; border-radius:8px;
+  font-weight:700; font-size:13px; cursor:pointer; flex:none;
+}
+.install-bar button.cerrar-install{
+  background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; flex:none; padding:0 2px;
+}
+.install-pasos{display:flex; gap:10px; margin-top:8px; font-size:12px; color:var(--muted);}
+.install-pasos .paso-install{display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;}
+.install-pasos .paso-install .num{
+  width:20px; height:20px; border-radius:50%; background:var(--red); color:#fff; font-weight:700;
+  display:flex; align-items:center; justify-content:center; font-size:11px;
+}
+
+/* Notificaciones */
+.notif-card{
+  background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:16px;
+}
+.notif-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
+.notif-row:last-child{margin-bottom:0;}
+.notif-estado{font-size:13px; color:var(--muted);}
+.notif-estado.on{color:var(--green);}
+.btn-notif{
+  background:var(--red); color:#fff; border:none; padding:10px 14px; border-radius:8px;
+  font-weight:700; font-size:13px; cursor:pointer; width:100%;
+}
+.btn-notif:disabled{background:var(--bg3); color:var(--muted); cursor:not-allowed;}
+.btn-notif.secundario{background:transparent; border:1px solid var(--line); color:var(--cream);}
+.check-promos{display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:13px; color:var(--muted); text-align:left;}
+.check-promos input{margin-top:3px;}
+.legal-promos{display:block; font-size:11px; color:var(--muted); margin-top:6px;}
+.footer-notif{max-width:720px; margin:18px auto 0; padding:0 16px;}
 </style>
 </head>
 <body>
+
+<div id="splash">
+  <img src="icons/icon-192.png" alt="Runfola">
+  <span>RUNFOLA</span>
+</div>
+
+<div class="install-bar" id="install-bar">
+  <div class="install-bar-txt" id="install-bar-txt"></div>
+  <button class="instalar" id="install-bar-btn" style="display:none;" onclick="clicInstalar()">Instalar</button>
+  <button class="cerrar-install" onclick="cerrarInstallBar()" aria-label="Cerrar">&times;</button>
+</div>
 
 <div class="promo-overlay" id="promoOverlayPorchetta" role="dialog" aria-modal="true" aria-label="Nueva pizza Porchetta Runfola">
   <div class="promo-modal" onclick="event.stopPropagation()">
@@ -280,7 +349,7 @@ input.campo-invalido{border-color:var(--red);}
 
 <header>
   <div class="header-inner">
-    <div class="logo-circle"><img src="https://i.imgur.com/J3rvA7x.png" alt="Runfola"></div>
+    <div class="logo-circle"><img src="icons/icon-192.png" alt="Runfola"></div>
     <div class="header-txt">
       <h1>Runfola Pizzas</h1>
       <p>C/ de la Orden 8, Local 20, C.C. Zoco, Soto del Real, Madrid 28791<br>
@@ -312,10 +381,21 @@ input.campo-invalido{border-color:var(--red);}
     <div id="seguimiento-vacio" class="vacio">Aún no tienes un pedido en curso. Realiza un pedido desde la Carta para ver aquí su seguimiento.</div>
     <div id="seguimiento-contenido" style="display:none; text-align:center; padding:20px 0;">
       <p style="color:var(--muted); margin-bottom:16px;">Tienes un pedido en curso.</p>
-      <a class="btn-principal" id="seguimiento-link" style="display:block; text-decoration:none; text-align:center;">Ver estado de mi pedido</a>
+      <a class="btn-principal" id="seguimiento-link" style="display:block; text-decoration:none; text-align:center; margin-bottom:10px;">Ver estado de mi pedido</a>
+      <div id="seguimiento-notif-wrap"></div>
     </div>
   </section>
 </main>
+
+<div class="footer-notif">
+  <div class="notif-card" id="notif-card">
+    <div class="notif-row">
+      <span>🔔 Notificaciones</span>
+      <span class="notif-estado" id="notif-estado-txt">Comprobando…</span>
+    </div>
+    <div id="notif-acciones"></div>
+  </div>
+</div>
 
 <button class="cart-bar" id="cart-bar" onclick="abrirCarrito()">
   <span class="cart-bar-info">🛒 <span id="cart-bar-cantidad">0 artículos</span><span class="cart-bar-sep">·</span><span id="cart-bar-total">0,00 €</span></span>
@@ -436,7 +516,8 @@ input.campo-invalido{border-color:var(--red);}
       Entre las 20:00 y las 22:00 tenemos alta demanda: tu pedido puede tardar unos 15 minutos más de lo habitual.
     </div>
     <div id="exito-resumen" class="exito-resumen"></div>
-    <a class="btn-principal" id="exito-link-seguimiento" style="display:block; text-decoration:none; text-align:center;">Ver estado de mi pedido</a>
+    <a class="btn-principal" id="exito-link-seguimiento" style="display:block; text-decoration:none; text-align:center; margin-bottom:10px;">Ver estado de mi pedido</a>
+    <div id="exito-notif-wrap"></div>
   </div>
 </div>
 
@@ -1167,11 +1248,13 @@ function pedidoConfirmado(datos){
   document.getElementById('exito-horapunta').style.display = datos.horaPunta ? 'block' : 'none';
   document.getElementById('exito-resumen').innerHTML = renderResumenHtml(pedidoActual);
   const link = guardarUltimoPedidoLink(datos.token);
+  guardarUltimoOrderId(datos.orderId);
   document.getElementById('exito-link-seguimiento').href = link;
   document.getElementById('overlay-exito').classList.add('visible');
-  registrarPush(datos.orderId);
+  renderBloquesNotifPedido();
   actualizarBannerPedidoCurso();
   actualizarSeguimientoTab();
+  actualizarNotifCard();
 }
 
 function mostrarVista(vista){
@@ -1194,6 +1277,7 @@ function actualizarSeguimientoTab(){
     vacio.style.display = 'none';
     contenido.style.display = 'block';
     document.getElementById('seguimiento-link').href = link;
+    renderBloquesNotifPedido();
   } else {
     vacio.style.display = 'block';
     contenido.style.display = 'none';
@@ -1224,26 +1308,159 @@ function urlBase64ToUint8Array(base64String){
   return outputArray;
 }
 
-async function registrarPush(orderId){
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  try {
-    const reg = await navigator.serviceWorker.register('/sw.js');
-    const permiso = await Notification.requestPermission();
-    if (permiso !== 'granted') return;
-    const res = await fetch(SERVER + '/vapid-public');
-    const { key } = await res.json();
-    if (!key) return;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(key)
-    });
-    await fetch(SERVER + '/subscribe', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, subscription: sub.toJSON() })
-    });
-  } catch (e) {
-    console.warn('Push no disponible:', e);
+/* ---- Notificaciones push: suscripción explícita (nunca al cargar la página) ---- */
+const esStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const esNavegadorInApp = () => /FBAN|FBAV|Instagram|Line\/|MicroMessenger|TikTok/i.test(navigator.userAgent);
+const esIOSSinInstalar = () => esIOS() && !esStandalone();
+
+function soportaPush(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+
+async function obtenerRegistroSW(){
+  if (!('serviceWorker' in navigator)) return null;
+  return navigator.serviceWorker.register('/sw.js');
+}
+
+async function obtenerSuscripcionPush(){
+  const reg = await obtenerRegistroSW();
+  if (!reg) return null;
+  return reg.pushManager.getSubscription();
+}
+
+async function crearSuscripcionPush(){
+  const reg = await obtenerRegistroSW();
+  const permiso = await Notification.requestPermission();
+  if (permiso !== 'granted') return null;
+  const res = await fetch(SERVER + '/push/clave-publica');
+  const { key } = await res.json();
+  if (!key) return null;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
   }
+  return sub;
+}
+
+async function enviarSuscripcionAlServidor(sub, promos, orderId){
+  const json = sub.toJSON();
+  await fetch(SERVER + '/push/suscribir', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys, promos: !!promos, orderId: orderId || null })
+  });
+}
+
+async function suscribirPedido(orderId, promos){
+  try {
+    const sub = await crearSuscripcionPush();
+    if (!sub) return false;
+    await enviarSuscripcionAlServidor(sub, promos, orderId);
+    return true;
+  } catch (e) {
+    console.warn('No se pudo activar la notificación del pedido:', e);
+    return false;
+  }
+}
+
+async function suscribirPromos(){
+  try {
+    const sub = await crearSuscripcionPush();
+    if (!sub) return false;
+    await enviarSuscripcionAlServidor(sub, true, null);
+    return true;
+  } catch (e) {
+    console.warn('No se pudo activar la suscripción a promociones:', e);
+    return false;
+  }
+}
+
+async function darDeBajaPush(soloPromos){
+  try {
+    const sub = await obtenerSuscripcionPush();
+    if (!sub) return;
+    const endpoint = sub.endpoint;
+    await fetch(SERVER + '/push/baja', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint, soloPromos: !!soloPromos })
+    });
+    if (!soloPromos) await sub.unsubscribe();
+  } catch (e) { console.warn('No se pudo dar de baja:', e); }
+}
+
+function htmlBotonNotifPedido(contId, orderId){
+  if (esIOSSinInstalar()) {
+    return `<button class="btn-notif secundario" disabled>Instala la app para recibir avisos</button>`;
+  }
+  if (!soportaPush()) return '';
+  return `
+    <button class="btn-notif" id="${contId}-btn" onclick="clicAvisarPedido('${contId}','${orderId}')">🔔 Avísame cuando mi pedido cambie de estado</button>
+    <label class="check-promos"><input type="checkbox" id="${contId}-promos"> Quiero recibir también promociones y novedades de Runfola</label>
+    <span class="legal-promos">Puedes darte de baja cuando quieras desde Notificaciones.</span>
+  `;
+}
+
+async function clicAvisarPedido(contId, orderId){
+  const btn = document.getElementById(contId + '-btn');
+  const chk = document.getElementById(contId + '-promos');
+  if (btn) { btn.disabled = true; btn.textContent = 'Activando…'; }
+  const ok = await suscribirPedido(orderId, chk && chk.checked);
+  const wrap = document.getElementById(contId);
+  if (ok && wrap) wrap.innerHTML = '<p class="notif-estado on">🔔 Te avisaremos cuando cambie el estado de tu pedido.</p>';
+  else if (btn) { btn.disabled = false; btn.textContent = '🔔 Avísame cuando mi pedido cambie de estado'; }
+  actualizarNotifCard();
+}
+
+function guardarUltimoOrderId(orderId){
+  try { localStorage.setItem('runfolaUltimoOrderId', orderId); } catch(e) {}
+}
+function obtenerUltimoOrderId(){
+  try { return localStorage.getItem('runfolaUltimoOrderId'); } catch(e) { return null; }
+}
+
+function renderBloquesNotifPedido(){
+  const exito = document.getElementById('exito-notif-wrap');
+  if (exito && pedidoActual) exito.innerHTML = htmlBotonNotifPedido('exito-notif-wrap', pedidoActual.orderId);
+  const seg = document.getElementById('seguimiento-notif-wrap');
+  if (seg) {
+    const orderId = obtenerUltimoOrderId() || '';
+    seg.innerHTML = htmlBotonNotifPedido('seguimiento-notif-wrap', orderId);
+  }
+}
+
+async function actualizarNotifCard(){
+  const txt = document.getElementById('notif-estado-txt');
+  const acciones = document.getElementById('notif-acciones');
+  if (!txt || !acciones) return;
+  if (esIOSSinInstalar()) {
+    txt.textContent = 'Instala la app para activarlas';
+    txt.className = 'notif-estado';
+    acciones.innerHTML = '';
+    return;
+  }
+  if (!soportaPush()) {
+    txt.textContent = 'No disponibles en este navegador';
+    acciones.innerHTML = '';
+    return;
+  }
+  const sub = await obtenerSuscripcionPush();
+  if (sub) {
+    txt.textContent = 'Activadas';
+    txt.className = 'notif-estado on';
+    acciones.innerHTML = `<button class="btn-notif secundario" onclick="clicDesactivarTodo()">Desactivar notificaciones</button>`;
+  } else {
+    txt.textContent = 'Desactivadas';
+    txt.className = 'notif-estado';
+    acciones.innerHTML = `<button class="btn-notif" onclick="clicAvisarPromos()">🔔 Avísame de promos y novedades</button>`;
+  }
+}
+
+async function clicAvisarPromos(){
+  await suscribirPromos();
+  actualizarNotifCard();
+}
+
+async function clicDesactivarTodo(){
+  await darDeBajaPush(false);
+  actualizarNotifCard();
 }
 
 /* ---- Popups Porchetta Runfola + Combo Bocata + obsequio domicilio, encadenados (máx. 1 vez al día) ---- */
@@ -1292,7 +1509,7 @@ function ctaPopupBocata(){
 }
 
 function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; setTimeout(evaluarInstalacion, 800); }
 
 promoOverlayPorchetta.addEventListener('click', e => { if (e.target === promoOverlayPorchetta) cerrarPopupPorchetta(); });
 promoOverlayBocata.addEventListener('click', e => { if (e.target === promoOverlayBocata) cerrarPopupBocata(); });
@@ -1312,11 +1529,105 @@ document.addEventListener('keydown', e => {
   }
 })();
 
+/* ---- Service worker: se registra siempre (requisito de instalabilidad), independiente del push ---- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+
+/* ---- Pantalla de carga: solo en modo standalone, máx. 1 s, con fundido ---- */
+(function splash(){
+  const el = document.getElementById('splash');
+  if (!esStandalone()) { el.remove(); return; }
+  const ocultar = () => { el.classList.add('oculto'); setTimeout(() => el.remove(), 400); };
+  setTimeout(ocultar, 1000);
+})();
+
+/* ---- Aviso de instalación (barra inferior discreta) ---- */
+let eventoInstalacionDiferido = null;
+const INSTALL_DISMISS_KEY = 'runfolaInstallCerrado';
+const INSTALL_DISMISS_DIAS = 7;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  eventoInstalacionDiferido = e;
+});
+
+function instalacionCerradaReciente(){
+  try {
+    const v = localStorage.getItem(INSTALL_DISMISS_KEY);
+    if (!v) return false;
+    return (Date.now() - parseInt(v, 10)) < INSTALL_DISMISS_DIAS * 86400000;
+  } catch(e) { return false; }
+}
+
+function cerrarInstallBar(){
+  document.getElementById('install-bar').classList.remove('visible');
+  try { localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); } catch(e) {}
+}
+
+async function clicInstalar(){
+  if (!eventoInstalacionDiferido) return;
+  eventoInstalacionDiferido.prompt();
+  await eventoInstalacionDiferido.userChoice;
+  eventoInstalacionDiferido = null;
+  cerrarInstallBar();
+}
+
+function hayPopupPromoAbierto(){
+  return document.querySelector('.promo-overlay.open') !== null;
+}
+
+function evaluarInstalacion(){
+  const bar = document.getElementById('install-bar');
+  if (esStandalone() || instalacionCerradaReciente() || bar.classList.contains('visible')) return;
+  if (hayPopupPromoAbierto()) { setTimeout(evaluarInstalacion, 1000); return; }
+  const txt = document.getElementById('install-bar-txt');
+  const btn = document.getElementById('install-bar-btn');
+
+  if (esNavegadorInApp()) {
+    txt.innerHTML = 'Para instalar Runfola, abre esta página en Safari o Chrome.';
+    btn.style.display = 'none';
+    const copiar = document.createElement('button');
+    copiar.className = 'instalar'; copiar.textContent = 'Copiar enlace';
+    copiar.onclick = () => { navigator.clipboard?.writeText(location.href).catch(()=>{}); copiar.textContent = '¡Copiado!'; };
+    bar.insertBefore(copiar, bar.lastElementChild);
+    bar.classList.add('visible');
+    return;
+  }
+  if (esIOS()) {
+    txt.innerHTML = '📲 Instala Runfola: pulsa Compartir ⬆️ y luego "Añadir a pantalla de inicio".' +
+      '<div class="install-pasos"><div class="paso-install"><span class="num">1</span>Toca ⬆️ Compartir</div>' +
+      '<div class="paso-install"><span class="num">2</span>"Añadir a inicio"</div></div>';
+    btn.style.display = 'none';
+    bar.classList.add('visible');
+    return;
+  }
+  if (eventoInstalacionDiferido) {
+    txt.textContent = '📲 Instala Runfola en tu móvil';
+    btn.style.display = 'inline-block';
+    bar.classList.add('visible');
+  }
+}
+
+// La barra de instalación espera a que termine la cadena de popups de promos del día,
+// o sale tras un tiempo prudencial si hoy no tocaba mostrar popups.
+setTimeout(evaluarInstalacion, 6000);
+
+/* ---- Deep link desde una notificación de promoción: ?promo=categoria:X o producto:ID:Categoria ---- */
+(function manejarPromoDeepLink(){
+  const p = new URLSearchParams(location.search).get('promo');
+  if (!p) return;
+  const partes = p.split(':');
+  if (partes[0] === 'categoria' && partes[1]) irAItemDestacado(partes[1], null);
+  else if (partes[0] === 'producto' && partes[2]) irAItemDestacado(partes[2], partes[1]);
+})();
+
 renderMenu();
 renderCarrito();
 refrescarEstado();
 actualizarBannerPedidoCurso();
 actualizarSeguimientoTab();
+actualizarNotifCard();
 </script>
 </body>
 </html>
