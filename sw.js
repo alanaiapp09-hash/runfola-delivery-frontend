@@ -1,6 +1,6 @@
 // Service Worker — Runfola Delivery PWA + Push
 // Sube la versión del nombre de caché en cada despliegue para forzar la limpieza de cachés viejas.
-const CACHE_VERSION = 'runfola-v5';
+const CACHE_VERSION = 'runfola-v6';
 const CACHE_HTML = `${CACHE_VERSION}-html`;
 const CACHE_ASSETS = `${CACHE_VERSION}-assets`;
 
@@ -80,8 +80,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Runfola Pizzas', {
       body: data.body || '',
-      icon: data.icon || '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: data.icon || 'https://delivery.runfolapizzas.com/icons/icon-192.png',
+      badge: data.badge || 'https://delivery.runfolapizzas.com/icons/badge-96.png',
       image: data.image || undefined,
       tag: 'runfola-' + (data.orderId || 'promo'),
       renotify: true,

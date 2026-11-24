@@ -379,6 +379,19 @@ input.campo-invalido{border-color:var(--red);}
   </div>
 </div>
 
+<div class="promo-overlay" id="promoOverlayDeepLink" role="dialog" aria-modal="true" aria-label="Promoción">
+  <div class="promo-modal" onclick="event.stopPropagation()">
+    <button class="promo-x" onclick="cerrarPopupPromoDeepLink()" aria-label="Cerrar">&times;</button>
+    <div class="promo-img" id="promoDeepLinkImgWrap" style="display:none;">
+      <img id="promoDeepLinkImg" src="" alt="" loading="eager">
+    </div>
+    <div class="promo-body">
+      <h3 id="promoDeepLinkTitulo"></h3>
+      <p id="promoDeepLinkTexto"></p>
+      <button type="button" class="promo-cta" onclick="cerrarPopupPromoDeepLink()">¡Lo quiero!</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="header-inner">
@@ -1538,6 +1551,7 @@ async function clicDesactivarTodo(){
 /* ---- Popups Porchetta Runfola + Combo Bocata, encadenados (máx. 1 vez al día) ---- */
 const promoOverlayPorchetta = document.getElementById('promoOverlayPorchetta');
 const promoOverlayBocata = document.getElementById('promoOverlayBocata');
+const promoOverlayDeepLink = document.getElementById('promoOverlayDeepLink');
 let cadenaPopupsDetenida = false;
 
 function irAItemDestacado(nombreCategoria, itemId){
@@ -1581,15 +1595,17 @@ function ctaPopupBocata(){
 
 promoOverlayPorchetta.addEventListener('click', e => { if (e.target === promoOverlayPorchetta) cerrarPopupPorchetta(); });
 promoOverlayBocata.addEventListener('click', e => { if (e.target === promoOverlayBocata) cerrarPopupBocata(); });
+promoOverlayDeepLink.addEventListener('click', e => { if (e.target === promoOverlayDeepLink) cerrarPopupPromoDeepLink(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (promoOverlayPorchetta.classList.contains('open')) cerrarPopupPorchetta();
   else if (promoOverlayBocata.classList.contains('open')) cerrarPopupBocata();
+  else if (promoOverlayDeepLink.classList.contains('open')) cerrarPopupPromoDeepLink();
 });
-function iniciarCadenaPopups(){
+function iniciarCadenaPopups(forzar){
   const today = new Date().toISOString().slice(0,10);
   const last = localStorage.getItem('runfolaPromoTequenosVistoFecha');
-  if (last !== today) {
+  if (forzar || last !== today) {
     localStorage.setItem('runfolaPromoTequenosVistoFecha', today);
     openPopupPorchetta();
   }
@@ -1781,14 +1797,55 @@ function iniciarOnboarding(){
   }
 }
 
-/* ---- Deep link desde una notificación de promoción: ?promo=categoria:X o producto:ID:Categoria ---- */
-(function manejarPromoDeepLink(){
-  const p = new URLSearchParams(location.search).get('promo');
-  if (!p) return;
-  const partes = p.split(':');
-  if (partes[0] === 'categoria' && partes[1]) irAItemDestacado(partes[1], null);
-  else if (partes[0] === 'producto' && partes[2]) irAItemDestacado(partes[2], partes[1]);
-})();
+/* ---- Deep link desde una notificación de promoción: ?promo=<id> ---- */
+function abrirPopupPromoDeepLink(promo, onCerrar){
+  _onCerrarPromoDeepLink = onCerrar;
+  document.getElementById('promoDeepLinkTitulo').textContent = promo.titulo || '';
+  document.getElementById('promoDeepLinkTexto').textContent = promo.texto || '';
+  const imgWrap = document.getElementById('promoDeepLinkImgWrap');
+  if (promo.imagen) {
+    document.getElementById('promoDeepLinkImg').src = promo.imagen;
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+  }
+  promoOverlayDeepLink.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+let _onCerrarPromoDeepLink = null;
+function cerrarPopupPromoDeepLink(){
+  promoOverlayDeepLink.classList.remove('open');
+  document.body.style.overflow = '';
+  const cb = _onCerrarPromoDeepLink; _onCerrarPromoDeepLink = null;
+  if (cb) cb();
+}
+
+// Devuelve true si la página se abrió con ?promo=<id> (haya cargado bien la promo o no):
+// en ese caso el llamador debe saltarse bienvenida/notificaciones y dejar que esta función
+// se encargue de encadenar el popup de la promo y, después, los popups habituales.
+async function manejarPromoDeepLink(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('promo');
+  if (!id) return false;
+
+  // Se quita de la URL de inmediato para que recargar la página no repita el popup.
+  const urlLimpia = new URL(location.href);
+  urlLimpia.searchParams.delete('promo');
+  history.replaceState({}, '', urlLimpia.toString());
+
+  try {
+    const res = await fetch(SERVER + '/promo/' + encodeURIComponent(id));
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ok) {
+        await new Promise((resolve) => abrirPopupPromoDeepLink(d, resolve));
+      }
+    }
+  } catch (e) { /* si falla, se pasa directamente a los popups habituales */ }
+
+  iniciarCadenaPopups(true); // forzar: aunque ya se hubieran visto hoy
+  return true;
+}
 
 renderMenu();
 renderCarrito();
@@ -1796,7 +1853,10 @@ refrescarEstado();
 actualizarBannerPedidoCurso();
 actualizarSeguimientoTab();
 actualizarNotifCard();
-ocultarSplash(iniciarOnboarding);
+ocultarSplash(async () => {
+  const esDeepLink = await manejarPromoDeepLink();
+  if (!esDeepLink) iniciarOnboarding();
+});
 </script>
 </body>
 </html>
