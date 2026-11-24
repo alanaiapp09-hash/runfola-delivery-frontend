@@ -251,28 +251,51 @@ input.campo-invalido{border-color:var(--red);}
 #splash img{width:96px; height:96px;}
 #splash span{font-family:'Poppins',sans-serif; font-weight:700; font-size:22px; color:#fff; letter-spacing:1px;}
 
-/* Aviso de instalación (barra inferior discreta) */
-.install-bar{
-  position:fixed; left:12px; right:12px; bottom:12px; z-index:200;
-  background:var(--bg2); border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px; display:none; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.4);
-  max-width:520px; margin:0 auto; font-size:13.5px;
+/* Pantalla de bienvenida (instalar la app) y pantalla de notificaciones: a pantalla completa, antes que nada */
+.full-pantalla{
+  position:fixed; inset:0; z-index:1000; display:none; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:32px 24px; gap:16px;
+  overflow-y:auto;
 }
-.install-bar.visible{display:flex;}
-.install-bar-txt{flex:1; line-height:1.4;}
-.install-bar button.instalar{
-  background:var(--red); color:#fff; border:none; padding:8px 14px; border-radius:8px;
-  font-weight:700; font-size:13px; cursor:pointer; flex:none;
+.full-pantalla.visible{display:flex;}
+#bienvenida{background:var(--red); color:#fff;}
+#bienvenida img{width:96px; height:96px;}
+#bienvenida h2{font-family:'Poppins',sans-serif; font-weight:700; font-size:24px; color:#fff; text-transform:none; letter-spacing:0; margin:0;}
+.bienvenida-ventajas{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; font-size:15px; font-weight:600;}
+.bienvenida-seguir-web{background:none; border:none; color:rgba(255,255,255,.85); font-size:13px; text-decoration:underline; cursor:pointer; margin-top:6px;}
+.btn-instalar-grande{
+  background:#fff; color:var(--red); border:none; padding:14px 28px; border-radius:10px;
+  font-weight:800; font-size:16px; cursor:pointer; width:100%; max-width:320px;
 }
-.install-bar button.cerrar-install{
-  background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; flex:none; padding:0 2px;
+.pasos-guia{display:flex; gap:16px; margin-top:4px;}
+.pasos-guia .paso{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:12.5px; max-width:120px;}
+.pasos-guia .num{
+  width:28px; height:28px; border-radius:50%; background:#fff; color:var(--red); font-weight:800;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
 }
-.install-pasos{display:flex; gap:10px; margin-top:8px; font-size:12px; color:var(--muted);}
-.install-pasos .paso-install{display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;}
-.install-pasos .paso-install .num{
-  width:20px; height:20px; border-radius:50%; background:var(--red); color:#fff; font-weight:700;
-  display:flex; align-items:center; justify-content:center; font-size:11px;
+.bienvenida-texto-secundario{font-size:13px; color:rgba(255,255,255,.85); max-width:320px; line-height:1.5;}
+.bienvenida-copiar{
+  background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.5); padding:10px 18px;
+  border-radius:10px; font-weight:700; cursor:pointer; font-size:14px;
 }
+#pantalla-notif{background:var(--bg2); color:var(--cream);}
+#pantalla-notif .emoji-grande{font-size:52px;}
+.notif-legal-grande{color:var(--muted); font-size:13px; max-width:320px; line-height:1.5;}
+.notif-pantalla-botones{display:flex; gap:12px; width:100%; max-width:320px;}
+.notif-pantalla-botones .btn-principal, .notif-pantalla-botones .btn-secundario{margin:0;}
+
+/* Envío gratis */
+.envio-gratis-info{
+  max-width:720px; margin:0 auto; padding:0 16px 8px; font-size:12.5px; color:var(--green); font-weight:700;
+}
+.envio-linea{display:flex; justify-content:space-between; padding:8px 0; color:var(--green); font-weight:700; font-size:14px; border-bottom:1px solid var(--line);}
+
+/* Obsequio de la app */
+.obsequio-app-aviso{
+  background:rgba(18,161,80,.12); border:1px solid var(--green); color:#8fe6b8;
+  border-radius:10px; padding:12px; font-size:13.5px; margin-bottom:14px; text-align:center;
+}
+.obsequio-app-aviso button{margin-top:10px;}
 
 /* Notificaciones */
 .notif-card{
@@ -301,10 +324,25 @@ input.campo-invalido{border-color:var(--red);}
   <span>RUNFOLA</span>
 </div>
 
-<div class="install-bar" id="install-bar">
-  <div class="install-bar-txt" id="install-bar-txt"></div>
-  <button class="instalar" id="install-bar-btn" style="display:none;" onclick="clicInstalar()">Instalar</button>
-  <button class="cerrar-install" onclick="cerrarInstallBar()" aria-label="Cerrar">&times;</button>
+<div id="bienvenida" class="full-pantalla">
+  <img src="icons/icon-512.png" alt="Runfola">
+  <h2>Descarga la app de Runfola</h2>
+  <ul class="bienvenida-ventajas">
+    <li>🎁 Entrada de regalo en cada pedido desde la app</li>
+    <li>🛵 Envío a domicilio gratis (pedido mínimo 25 €)</li>
+  </ul>
+  <div id="bienvenida-accion"></div>
+  <button class="bienvenida-seguir-web" onclick="seguirEnLaWeb()">Seguir en la web →</button>
+</div>
+
+<div id="pantalla-notif" class="full-pantalla">
+  <div class="emoji-grande">🔔</div>
+  <h2 style="font-family:'Anton',sans-serif; font-size:19px;">¿Quieres recibir promos y avisos de tus pedidos?</h2>
+  <p class="notif-legal-grande">Te avisaremos de promociones, novedades y del estado de tus pedidos. Puedes darte de baja cuando quieras desde Notificaciones.</p>
+  <div class="notif-pantalla-botones">
+    <button class="btn-principal" onclick="clicActivarNotifPantalla()">Activar</button>
+    <button class="btn-secundario" onclick="clicAhoraNoNotifPantalla()">Ahora no</button>
+  </div>
 </div>
 
 <div class="promo-overlay" id="promoOverlayPorchetta" role="dialog" aria-modal="true" aria-label="Nueva pizza Porchetta Runfola">
@@ -334,18 +372,6 @@ input.campo-invalido{border-color:var(--red);}
   </div>
 </div>
 
-<div class="promo-overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-label="Promoción obsequio pedido a domicilio">
-  <div class="promo-modal" onclick="event.stopPropagation()">
-    <button class="promo-x" onclick="closePromo()" aria-label="Cerrar">&times;</button>
-    <div class="promo-img">
-      <img src="image/promo-2-web.jpg" alt="Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli, según nuestra disponibilidad" loading="eager">
-    </div>
-    <div class="promo-body">
-      <p>Pide a domicilio desde nuestra web y te podrás llevar una ración de Tequeños, Aros de Cebolla o Patatas Alioli, según nuestra disponibilidad. Válido solo en pedidos a domicilio. Una ración por pedido.</p>
-      <button type="button" class="promo-cta" id="promoCta" onclick="closePromo()">¡Pedir ahora!</button>
-    </div>
-  </div>
-</div>
 
 <header>
   <div class="header-inner">
@@ -358,6 +384,7 @@ input.campo-invalido{border-color:var(--red);}
   </div>
   <div class="free-zone">Reparto <b>gratis</b> en Soto del Real, Manzanares el Real, Guadalix de la Sierra, El Endrinal y Miraflores de la Sierra.</div>
   <div class="horario-info">Pedidos online de 12:00 a 23:30 · Miércoles cerrado</div>
+  <div class="envio-gratis-info">🛵 Envío gratis · Pedido mínimo 25 €</div>
   <div class="tricolor"><span class="v"></span><span class="b"></span><span class="r"></span></div>
 </header>
 
@@ -434,6 +461,21 @@ input.campo-invalido{border-color:var(--red);}
     <button class="modal-close" onclick="cerrarOverlay('overlay-checkout')">✕</button>
     <h2>Tus datos</h2>
     <div id="aviso-horario-checkout" class="aviso-minimo" style="display:none;"></div>
+    <div id="obsequio-app-wrap" style="display:none;">
+      <label>🎁 Tu entrada de regalo por pedir desde la app</label>
+      <div class="entrega-opciones" id="obsequio-opciones">
+        <button type="button" class="entrega-op" data-valor="Tequeños" onclick="seleccionarObsequio('Tequeños')">Tequeños</button>
+        <button type="button" class="entrega-op" data-valor="Aros de Cebolla" onclick="seleccionarObsequio('Aros de Cebolla')">Aros de cebolla</button>
+        <button type="button" class="entrega-op" data-valor="Patatas Alioli" onclick="seleccionarObsequio('Patatas Alioli')">Patatas alioli</button>
+      </div>
+      <span class="legal-promos">Según disponibilidad.</span>
+    </div>
+    <div id="aviso-pide-app" style="display:none;">
+      <div class="obsequio-app-aviso">
+        📲 Pide desde la app y llévate una entrada gratis en cada pedido
+        <div><button type="button" class="btn-secundario" onclick="abrirBienvenidaManual()">Instalar app</button></div>
+      </div>
+    </div>
     <label>¿Cuándo?</label>
     <div class="entrega-opciones" id="entrega-opciones">
       <label class="entrega-op sel" id="entrega-op-asap">
@@ -647,6 +689,8 @@ let entregaTipo = 'asap';   // 'asap' | 'programada'
 let pedidoActual = null;
 let propina = 0;
 let propinaTipo = 'ninguna';   // 'ninguna' | 'redondeo' | '1' | '2'
+let obsequioSeleccionado = null;
+const OBSEQUIOS_APP = ['Tequeños', 'Aros de Cebolla', 'Patatas Alioli'];
 
 function fmt(n){ return n.toFixed(2).replace('.', ',') + ' €'; }
 function round2(n){ return Math.round(n*100)/100; }
@@ -802,12 +846,8 @@ function renderCarrito(){
     </div>
   `).join('') : '<p class="vacio">Tu carrito está vacío.</p>';
 
-  if (carrito.length && modoPedido === 'domicilio') {
-    html += `
-    <div class="cart-item">
-      <div><div class="nombre">Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli (según disponibilidad)</div></div>
-      <div class="item-precio">0,00 €</div>
-    </div>`;
+  if (carrito.length && modoPedido === 'domicilio' && total >= PEDIDO_MINIMO) {
+    html += `<div class="envio-linea"><span>Envío a domicilio</span><span>Gratis</span></div>`;
   }
   lista.innerHTML = html;
 
@@ -816,7 +856,7 @@ function renderCarrito(){
   const btnContinuar = document.getElementById('btn-continuar');
   if (modoPedido === 'domicilio' && total < PEDIDO_MINIMO) {
     aviso.style.display = 'block';
-    aviso.textContent = `Pedido mínimo ${PEDIDO_MINIMO} € (te faltan ${fmt(PEDIDO_MINIMO - total)})`;
+    aviso.textContent = `Te faltan ${fmt(PEDIDO_MINIMO - total)} para el envío gratis`;
     btnContinuar.disabled = true;
   } else {
     aviso.style.display = 'none';
@@ -1022,10 +1062,27 @@ function seguirComprando(){
   mostrarVista('carta');
 }
 
+function seleccionarObsequio(valor){
+  obsequioSeleccionado = valor;
+  document.querySelectorAll('#obsequio-opciones .entrega-op').forEach((btn) => {
+    btn.classList.toggle('sel', btn.dataset.valor === valor);
+  });
+}
+
+function actualizarBloqueObsequioApp(){
+  const esApp = esStandalone();
+  document.getElementById('obsequio-app-wrap').style.display = esApp ? 'block' : 'none';
+  document.getElementById('aviso-pide-app').style.display = esApp ? 'none' : 'block';
+  if (!esApp) obsequioSeleccionado = null;
+}
+
 function abrirCheckout(){
   cerrarOverlay('overlay-carrito');
   actualizarCheckoutModo();
   comprobarHorarioCheckout();
+  obsequioSeleccionado = null;
+  document.querySelectorAll('#obsequio-opciones .entrega-op').forEach((btn) => btn.classList.remove('sel'));
+  actualizarBloqueObsequioApp();
   document.getElementById('overlay-checkout').classList.add('visible');
   refrescarEstado();
 }
@@ -1078,6 +1135,10 @@ async function realizarPedido(){
   if (modoPedido === 'domicilio' && total < PEDIDO_MINIMO) {
     return mostrarErrorCheckout(`Pedido mínimo ${PEDIDO_MINIMO} €.`);
   }
+  const origen = esStandalone() ? 'app' : 'web';
+  if (origen === 'app' && !obsequioSeleccionado) {
+    return mostrarErrorCheckout('Elige tu entrada de regalo por pedir desde la app.');
+  }
 
   const pagaConEl = document.getElementById('chk-pagacon');
   const vPagaCon = parseFloat(pagaConEl.value);
@@ -1095,17 +1156,15 @@ async function realizarPedido(){
     nombre: it.detalle ? `${it.nombre} (${it.detalle})` : it.nombre,
     precio: it.precio, cantidad: it.cantidad
   }));
-  if (modoPedido === 'domicilio') {
-    items.push({ nombre: 'Obsequio: una ración de Tequeños, Aros de Cebolla o Patatas Alioli (según disponibilidad)', precio: 0, cantidad: 1 });
-  }
   const direccionEnvio = modoPedido === 'domicilio' ? direccion : '';
   const pagaCon = pagaConValido ? vPagaCon : null;
   const propinaEnviar = modoPedido === 'domicilio' ? propina : 0;
+  const obsequioEnviar = origen === 'app' ? obsequioSeleccionado : null;
 
   try {
     const res = await fetch(SERVER + '/pedido', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon, propina: propinaEnviar, entrega: entregaTipo, horaProgramada })
+      body: JSON.stringify({ nombre, telefono, correo, direccion: direccionEnvio, notas, pago: pagoSeleccionado, modo: modoPedido, items, total, pagaCon, propina: propinaEnviar, entrega: entregaTipo, horaProgramada, origen, obsequio: obsequioEnviar })
     });
     const data = await res.json();
     if (!data.ok) {
@@ -1119,7 +1178,8 @@ async function realizarPedido(){
       orderId: data.orderId, token: data.token,
       nombre, telefono, correo, direccion: direccionEnvio, modo: modoPedido,
       items, total, propina: propinaEnviar, granTotal: round2(total + propinaEnviar),
-      pago: pagoSeleccionado, entregaTipo, horaProgramada: entregaTipo === 'programada' ? horaProgramada : null
+      pago: pagoSeleccionado, entregaTipo, horaProgramada: entregaTipo === 'programada' ? horaProgramada : null,
+      origen, obsequio: obsequioEnviar
     };
 
     if (pagoSeleccionado === 'efectivo') {
@@ -1222,7 +1282,11 @@ function renderResumenHtml(p){
   const pagoTxt = p.pago === 'tarjeta' ? '💳 Tarjeta (pagado online)' : '💵 Efectivo';
   const modoTxt = p.modo === 'recogida' ? '🏬 Recogida en el local' : '🛵 A domicilio';
   const entregaTxt = p.entregaTipo === 'programada' ? ('📅 Programado para las ' + p.horaProgramada) : '⏱️ Lo antes posible';
-  let html = lineas + '<hr>';
+  let html = lineas;
+  if (p.obsequio) {
+    html += `<div class="linea"><span>🎁 Obsequio app: ${p.obsequio}</span><b>0,00 €</b></div>`;
+  }
+  html += '<hr>';
   html += `<div class="linea"><span>Total</span><b>${fmt(p.total)}</b></div>`;
   if (p.propina > 0) {
     html += `<div class="linea"><span>Propina</span><b>${fmt(p.propina)}</b></div>`;
@@ -1463,10 +1527,9 @@ async function clicDesactivarTodo(){
   actualizarNotifCard();
 }
 
-/* ---- Popups Porchetta Runfola + Combo Bocata + obsequio domicilio, encadenados (máx. 1 vez al día) ---- */
+/* ---- Popups Porchetta Runfola + Combo Bocata, encadenados (máx. 1 vez al día) ---- */
 const promoOverlayPorchetta = document.getElementById('promoOverlayPorchetta');
 const promoOverlayBocata = document.getElementById('promoOverlayBocata');
-const promoOverlay = document.getElementById('promoOverlay');
 let cadenaPopupsDetenida = false;
 
 function irAItemDestacado(nombreCategoria, itemId){
@@ -1499,7 +1562,7 @@ function ctaPopupPorchetta(){
 function openPopupBocata(){ promoOverlayBocata.classList.add('open'); document.body.style.overflow = 'hidden'; }
 function cerrarPopupBocata(){
   promoOverlayBocata.classList.remove('open');
-  if (!cadenaPopupsDetenida) openPromo(); else document.body.style.overflow = '';
+  document.body.style.overflow = '';
 }
 function ctaPopupBocata(){
   cadenaPopupsDetenida = true;
@@ -1508,26 +1571,21 @@ function ctaPopupBocata(){
   irAItemDestacado('Bocata', null);
 }
 
-function openPromo(){ promoOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closePromo(){ promoOverlay.classList.remove('open'); document.body.style.overflow = ''; setTimeout(evaluarInstalacion, 800); }
-
 promoOverlayPorchetta.addEventListener('click', e => { if (e.target === promoOverlayPorchetta) cerrarPopupPorchetta(); });
 promoOverlayBocata.addEventListener('click', e => { if (e.target === promoOverlayBocata) cerrarPopupBocata(); });
-promoOverlay.addEventListener('click', e => { if (e.target === promoOverlay) closePromo(); });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (promoOverlayPorchetta.classList.contains('open')) cerrarPopupPorchetta();
   else if (promoOverlayBocata.classList.contains('open')) cerrarPopupBocata();
-  else if (promoOverlay.classList.contains('open')) closePromo();
 });
-(function(){
+function iniciarCadenaPopups(){
   const today = new Date().toISOString().slice(0,10);
   const last = localStorage.getItem('runfolaPromoTequenosVistoFecha');
   if (last !== today) {
-    openPopupPorchetta();
     localStorage.setItem('runfolaPromoTequenosVistoFecha', today);
+    openPopupPorchetta();
   }
-})();
+}
 
 /* ---- Service worker: se registra siempre (requisito de instalabilidad), independiente del push ---- */
 if ('serviceWorker' in navigator) {
@@ -1535,83 +1593,166 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ---- Pantalla de carga: solo en modo standalone, máx. 1 s, con fundido ---- */
-(function splash(){
+function ocultarSplash(cb){
   const el = document.getElementById('splash');
-  if (!esStandalone()) { el.remove(); return; }
-  const ocultar = () => { el.classList.add('oculto'); setTimeout(() => el.remove(), 400); };
-  setTimeout(ocultar, 1000);
-})();
+  if (!el) { if (cb) cb(); return; }
+  if (!esStandalone()) { el.remove(); if (cb) cb(); return; }
+  setTimeout(() => {
+    el.classList.add('oculto');
+    setTimeout(() => { el.remove(); if (cb) cb(); }, 400);
+  }, 1000);
+}
 
-/* ---- Aviso de instalación (barra inferior discreta) ---- */
+/* ---- Pantalla 1: Bienvenida / instalar la app ---- */
 let eventoInstalacionDiferido = null;
-const INSTALL_DISMISS_KEY = 'runfolaInstallCerrado';
-const INSTALL_DISMISS_DIAS = 7;
+const BIENVENIDA_DISMISS_KEY = 'runfolaBienvenidaCerrada';
+const NOTIF_PANTALLA_DISMISS_KEY = 'runfolaNotifPantallaCerrada';
+const NOTIF_STANDALONE_KEY = 'runfolaNotifStandaloneMostrada';
+const DIAS_7_MS = 7 * 86400000;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   eventoInstalacionDiferido = e;
+  if (document.getElementById('bienvenida')?.classList.contains('visible')) renderAccionBienvenida();
 });
 
-function instalacionCerradaReciente(){
+window.addEventListener('appinstalled', () => {
+  eventoInstalacionDiferido = null;
+  if (document.getElementById('bienvenida')?.classList.contains('visible')) {
+    document.getElementById('bienvenida-accion').innerHTML = `
+      <p class="bienvenida-texto-secundario">✅ ¡Listo! Abre Runfola desde tu pantalla de inicio</p>
+      <button class="btn-instalar-grande" onclick="cerrarBienvenida()">Continuar</button>
+    `;
+    try { localStorage.setItem(BIENVENIDA_DISMISS_KEY, String(Date.now())); } catch(e) {}
+  }
+});
+
+function marcaCerradaReciente(clave){
   try {
-    const v = localStorage.getItem(INSTALL_DISMISS_KEY);
+    const v = localStorage.getItem(clave);
     if (!v) return false;
-    return (Date.now() - parseInt(v, 10)) < INSTALL_DISMISS_DIAS * 86400000;
+    return (Date.now() - parseInt(v, 10)) < DIAS_7_MS;
   } catch(e) { return false; }
 }
 
-function cerrarInstallBar(){
-  document.getElementById('install-bar').classList.remove('visible');
-  try { localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); } catch(e) {}
+function esMovilOTablet(){
+  try {
+    if (window.matchMedia('(pointer: coarse)').matches) return true;
+  } catch(e) {}
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
-async function clicInstalar(){
-  if (!eventoInstalacionDiferido) return;
-  eventoInstalacionDiferido.prompt();
-  await eventoInstalacionDiferido.userChoice;
-  eventoInstalacionDiferido = null;
-  cerrarInstallBar();
-}
-
-function hayPopupPromoAbierto(){
-  return document.querySelector('.promo-overlay.open') !== null;
-}
-
-function evaluarInstalacion(){
-  const bar = document.getElementById('install-bar');
-  if (esStandalone() || instalacionCerradaReciente() || bar.classList.contains('visible')) return;
-  if (hayPopupPromoAbierto()) { setTimeout(evaluarInstalacion, 1000); return; }
-  const txt = document.getElementById('install-bar-txt');
-  const btn = document.getElementById('install-bar-btn');
-
+function renderAccionBienvenida(){
+  const cont = document.getElementById('bienvenida-accion');
   if (esNavegadorInApp()) {
-    txt.innerHTML = 'Para instalar Runfola, abre esta página en Safari o Chrome.';
-    btn.style.display = 'none';
-    const copiar = document.createElement('button');
-    copiar.className = 'instalar'; copiar.textContent = 'Copiar enlace';
-    copiar.onclick = () => { navigator.clipboard?.writeText(location.href).catch(()=>{}); copiar.textContent = '¡Copiado!'; };
-    bar.insertBefore(copiar, bar.lastElementChild);
-    bar.classList.add('visible');
+    cont.innerHTML = `
+      <p class="bienvenida-texto-secundario">Para instalar la app, abre esta página en Safari o Chrome.</p>
+      <button class="bienvenida-copiar" id="btn-copiar-enlace">Copiar enlace</button>
+    `;
+    document.getElementById('btn-copiar-enlace').onclick = (e) => {
+      navigator.clipboard?.writeText(location.href).catch(()=>{});
+      e.target.textContent = 'Enlace copiado';
+    };
     return;
   }
   if (esIOS()) {
-    txt.innerHTML = '📲 Instala Runfola: pulsa Compartir ⬆️ y luego "Añadir a pantalla de inicio".' +
-      '<div class="install-pasos"><div class="paso-install"><span class="num">1</span>Toca ⬆️ Compartir</div>' +
-      '<div class="paso-install"><span class="num">2</span>"Añadir a inicio"</div></div>';
-    btn.style.display = 'none';
-    bar.classList.add('visible');
+    cont.innerHTML = `
+      <div class="pasos-guia">
+        <div class="paso"><span class="num">1</span>Toca ⬆️ Compartir</div>
+        <div class="paso"><span class="num">2</span>"Añadir a pantalla de inicio"</div>
+      </div>
+    `;
     return;
   }
   if (eventoInstalacionDiferido) {
-    txt.textContent = '📲 Instala Runfola en tu móvil';
-    btn.style.display = 'inline-block';
-    bar.classList.add('visible');
+    cont.innerHTML = `<button class="btn-instalar-grande" onclick="clicInstalarBienvenida()">Instalar app</button>`;
+  } else {
+    cont.innerHTML = `<p class="bienvenida-texto-secundario">Toca el menú ⋮ de Chrome → "Instalar aplicación" (o "Añadir a pantalla de inicio").</p>`;
   }
 }
 
-// La barra de instalación espera a que termine la cadena de popups de promos del día,
-// o sale tras un tiempo prudencial si hoy no tocaba mostrar popups.
-setTimeout(evaluarInstalacion, 6000);
+async function clicInstalarBienvenida(){
+  if (!eventoInstalacionDiferido) return;
+  eventoInstalacionDiferido.prompt();
+  await eventoInstalacionDiferido.userChoice;
+}
+
+let _onCerrarBienvenida = null;
+function mostrarBienvenida(onContinuar){
+  _onCerrarBienvenida = onContinuar;
+  renderAccionBienvenida();
+  document.getElementById('bienvenida').classList.add('visible');
+}
+function cerrarBienvenida(){
+  document.getElementById('bienvenida').classList.remove('visible');
+  const cb = _onCerrarBienvenida; _onCerrarBienvenida = null;
+  if (cb) cb();
+}
+function seguirEnLaWeb(){
+  try { localStorage.setItem(BIENVENIDA_DISMISS_KEY, String(Date.now())); } catch(e) {}
+  cerrarBienvenida();
+}
+function abrirBienvenidaManual(){
+  mostrarBienvenida(() => {});
+}
+
+function debeMostrarBienvenida(){
+  return esMovilOTablet() && !esStandalone() && !marcaCerradaReciente(BIENVENIDA_DISMISS_KEY);
+}
+
+/* ---- Pantalla 2: Notificaciones ---- */
+function mostrarPantallaNotif(onContinuar){
+  document.getElementById('pantalla-notif').classList.add('visible');
+  window._onCerrarNotifPantalla = onContinuar;
+}
+function cerrarPantallaNotif(){
+  document.getElementById('pantalla-notif').classList.remove('visible');
+  const cb = window._onCerrarNotifPantalla; window._onCerrarNotifPantalla = null;
+  if (cb) cb();
+}
+async function clicActivarNotifPantalla(){
+  await suscribirPromos();
+  actualizarNotifCard();
+  cerrarPantallaNotif();
+}
+function clicAhoraNoNotifPantalla(){
+  try { localStorage.setItem(NOTIF_PANTALLA_DISMISS_KEY, String(Date.now())); } catch(e) {}
+  cerrarPantallaNotif();
+}
+
+async function debeMostrarPantallaNotif(){
+  if (!soportaPush()) return false;
+  if (Notification.permission !== 'default') return false;
+  const sub = await obtenerSuscripcionPush().catch(() => null);
+  if (sub) return false;
+  if (esStandalone()) {
+    try { if (localStorage.getItem(NOTIF_STANDALONE_KEY)) return false; } catch(e) {}
+    return true;
+  }
+  if (!esMovilOTablet()) return false;
+  if (esIOS()) return false; // iOS en Safari sin instalar: no se puede pedir permiso
+  if (esNavegadorInApp()) return false;
+  return !marcaCerradaReciente(NOTIF_PANTALLA_DISMISS_KEY);
+}
+
+async function pasoNotificaciones(){
+  if (esStandalone()) {
+    try { localStorage.setItem(NOTIF_STANDALONE_KEY, '1'); } catch(e) {}
+  }
+  if (await debeMostrarPantallaNotif()) {
+    mostrarPantallaNotif(iniciarCadenaPopups);
+  } else {
+    iniciarCadenaPopups();
+  }
+}
+
+function iniciarOnboarding(){
+  if (debeMostrarBienvenida()) {
+    mostrarBienvenida(pasoNotificaciones);
+  } else {
+    pasoNotificaciones();
+  }
+}
 
 /* ---- Deep link desde una notificación de promoción: ?promo=categoria:X o producto:ID:Categoria ---- */
 (function manejarPromoDeepLink(){
@@ -1628,6 +1769,7 @@ refrescarEstado();
 actualizarBannerPedidoCurso();
 actualizarSeguimientoTab();
 actualizarNotifCard();
+ocultarSplash(iniciarOnboarding);
 </script>
 </body>
 </html>
