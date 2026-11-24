@@ -328,7 +328,7 @@ input.campo-invalido{border-color:var(--red);}
   <img src="icons/icon-512.png" alt="Runfola">
   <h2>Descarga la app de Runfola</h2>
   <ul class="bienvenida-ventajas">
-    <li>🎁 Entrada de regalo en cada pedido desde la app</li>
+    <li>🎁 Entrante de regalo en cada pedido desde la app</li>
     <li>🛵 Envío a domicilio gratis (pedido mínimo 25 €)</li>
   </ul>
   <div id="bienvenida-accion"></div>
@@ -462,7 +462,7 @@ input.campo-invalido{border-color:var(--red);}
     <h2>Tus datos</h2>
     <div id="aviso-horario-checkout" class="aviso-minimo" style="display:none;"></div>
     <div id="obsequio-app-wrap" style="display:none;">
-      <label>🎁 Tu entrada de regalo por pedir desde la app</label>
+      <label>🎁 Tu entrante de regalo por pedir desde la app</label>
       <div class="entrega-opciones" id="obsequio-opciones">
         <button type="button" class="entrega-op" data-valor="Tequeños" onclick="seleccionarObsequio('Tequeños')">Tequeños</button>
         <button type="button" class="entrega-op" data-valor="Aros de Cebolla" onclick="seleccionarObsequio('Aros de Cebolla')">Aros de cebolla</button>
@@ -472,7 +472,7 @@ input.campo-invalido{border-color:var(--red);}
     </div>
     <div id="aviso-pide-app" style="display:none;">
       <div class="obsequio-app-aviso">
-        📲 Pide desde la app y llévate una entrada gratis en cada pedido
+        📲 Pide desde la app y llévate un entrante gratis en cada pedido
         <div><button type="button" class="btn-secundario" onclick="abrirBienvenidaManual()">Instalar app</button></div>
       </div>
     </div>
@@ -1137,7 +1137,7 @@ async function realizarPedido(){
   }
   const origen = esStandalone() ? 'app' : 'web';
   if (origen === 'app' && !obsequioSeleccionado) {
-    return mostrarErrorCheckout('Elige tu entrada de regalo por pedir desde la app.');
+    return mostrarErrorCheckout('Elige tu entrante de regalo por pedir desde la app.');
   }
 
   const pagaConEl = document.getElementById('chk-pagacon');
